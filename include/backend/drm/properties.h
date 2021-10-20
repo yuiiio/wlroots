@@ -38,6 +38,7 @@ struct wlr_drm_crtc_props {
 
 	uint32_t active;
 	uint32_t mode_id;
+	uint32_t out_fence_ptr;
 };
 
 struct wlr_drm_plane_props {
@@ -61,6 +62,7 @@ struct wlr_drm_plane_props {
 	uint32_t fb_damage_clips;
 	uint32_t hotspot_x;
 	uint32_t hotspot_y;
+	uint32_t in_fence_fd;
 };
 
 bool get_drm_connector_props(int fd, uint32_t id,
