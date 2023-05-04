@@ -417,6 +417,12 @@ void wlr_surface_set_preferred_buffer_transform(struct wlr_surface *surface,
 	enum wl_output_transform transform);
 
 /**
+ * Consumes buffer and damage state of the buffer so that the compositor may
+ * drop references to any of these resources.
+ */
+void wlr_surface_consume(struct wlr_surface *surface);
+
+/**
  * Create the wl_compositor global, which can be used by clients to create
  * surfaces and regions.
  *
