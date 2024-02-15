@@ -73,6 +73,9 @@ static const char *const atom_map[ATOM_LAST] = {
 	[NET_WM_WINDOW_TYPE_NOTIFICATION] = "_NET_WM_WINDOW_TYPE_NOTIFICATION",
 	[NET_WM_WINDOW_TYPE_SPLASH] = "_NET_WM_WINDOW_TYPE_SPLASH",
 	[NET_WM_WINDOW_TYPE_DESKTOP] = "_NET_WM_WINDOW_TYPE_DESKTOP",
+	[NET_WM_WINDOW_TYPE_DOCK] = "_NET_WM_WINDOW_TYPE_DOCK",
+	[NET_WM_WINDOW_TYPE_TOOLBAR] = "_NET_WM_WINDOW_TYPE_TOOLBAR",
+	[NET_WM_WINDOW_TYPE_DIALOG] = "_NET_WM_WINDOW_TYPE_DIALOG",
 	[DND_SELECTION] = "XdndSelection",
 	[DND_AWARE] = "XdndAware",
 	[DND_STATUS] = "XdndStatus",
@@ -2391,6 +2394,34 @@ void wlr_xwayland_surface_ping(struct wlr_xwayland_surface *surface) {
 	wl_event_source_timer_update(surface->ping_timer,
 		surface->xwm->ping_timeout);
 	surface->pinging = true;
+}
+
+bool wlr_xwayland_surface_has_window_type(
+		const struct wlr_xwayland_surface *xsurface,
+		enum wlr_xwayland_net_wm_window_type window_type) {
+	static const enum atom_name atom_names[] = {
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DESKTOP]       = NET_WM_WINDOW_TYPE_DESKTOP,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DOCK]          = NET_WM_WINDOW_TYPE_DOCK,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_TOOLBAR]       = NET_WM_WINDOW_TYPE_TOOLBAR,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_MENU]          = NET_WM_WINDOW_TYPE_MENU,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_UTILITY]       = NET_WM_WINDOW_TYPE_UTILITY,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_SPLASH]        = NET_WM_WINDOW_TYPE_SPLASH,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DIALOG]        = NET_WM_WINDOW_TYPE_DIALOG,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DROPDOWN_MENU] = NET_WM_WINDOW_TYPE_DROPDOWN_MENU,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_POPUP_MENU]    = NET_WM_WINDOW_TYPE_POPUP_MENU,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_TOOLTIP]       = NET_WM_WINDOW_TYPE_TOOLTIP,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_NOTIFICATION]  = NET_WM_WINDOW_TYPE_NOTIFICATION,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_COMBO]         = NET_WM_WINDOW_TYPE_COMBO,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DND]           = NET_WM_WINDOW_TYPE_DND,
+		[WLR_XWAYLAND_NET_WM_WINDOW_TYPE_NORMAL]        = NET_WM_WINDOW_TYPE_NORMAL,
+	};
+
+	if (window_type >= 0 && window_type < sizeof(atom_names) / sizeof(atom_names[0])) {
+		return xwm_atoms_contains(xsurface->xwm, xsurface->window_type,
+			xsurface->window_type_len, atom_names[window_type]);
+	}
+
+	return false;
 }
 
 bool wlr_xwayland_surface_override_redirect_wants_focus(
