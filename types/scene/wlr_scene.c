@@ -3,6 +3,7 @@
 #include <string.h>
 #include <wlr/backend.h>
 #include <wlr/render/swapchain.h>
+#include <wlr/render/drm_syncobj.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_damage_ring.h>
@@ -117,6 +118,7 @@ void wlr_scene_node_destroy(struct wlr_scene_node *node) {
 		scene_buffer_set_buffer(scene_buffer, NULL);
 		scene_buffer_set_texture(scene_buffer, NULL);
 		pixman_region32_fini(&scene_buffer->opaque_region);
+		wlr_drm_syncobj_timeline_unref(scene_buffer->wait_timeline);
 	} else if (node->type == WLR_SCENE_NODE_TREE) {
 		struct wlr_scene_tree *scene_tree = wlr_scene_tree_from_node(node);
 
@@ -661,6 +663,18 @@ static void scene_buffer_set_texture(struct wlr_scene_buffer *scene_buffer,
 	}
 }
 
+static void scene_buffer_set_wait_timeline(struct wlr_scene_buffer *scene_buffer,
+		struct wlr_drm_syncobj_timeline *timeline, uint64_t point) {
+	wlr_drm_syncobj_timeline_unref(scene_buffer->wait_timeline);
+	if (timeline != NULL) {
+		scene_buffer->wait_timeline = wlr_drm_syncobj_timeline_ref(timeline);
+		scene_buffer->wait_point = point;
+	} else {
+		scene_buffer->wait_timeline = NULL;
+		scene_buffer->wait_point = 0;
+	}
+}
+
 struct wlr_scene_buffer *wlr_scene_buffer_create(struct wlr_scene_tree *parent,
 		struct wlr_buffer *buffer) {
 	struct wlr_scene_buffer *scene_buffer = calloc(1, sizeof(*scene_buffer));
@@ -717,6 +731,8 @@ void wlr_scene_buffer_set_buffer_with_options(struct wlr_scene_buffer *scene_buf
 
 	scene_buffer_set_buffer(scene_buffer, buffer);
 	scene_buffer_set_texture(scene_buffer, NULL);
+	scene_buffer_set_wait_timeline(scene_buffer,
+		options->wait_timeline, options->wait_point);
 
 	if (update) {
 		scene_node_update(&scene_buffer->node, NULL);
@@ -1259,6 +1275,8 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 			.blend_mode = !data->output->scene->calculate_visibility ||
 					pixman_region32_not_empty(&opaque) ?
 				WLR_RENDER_BLEND_MODE_PREMULTIPLIED : WLR_RENDER_BLEND_MODE_NONE,
+			.wait_timeline = scene_buffer->wait_timeline,
+			.wait_point = scene_buffer->wait_point,
 		});
 
 		struct wlr_scene_output_sample_event sample_event = {
@@ -1687,6 +1705,9 @@ static bool scene_entry_try_direct_scanout(struct render_list_entry *entry,
 	}
 
 	wlr_output_state_set_buffer(&pending, buffer->buffer);
+	if (buffer->wait_timeline != NULL) {
+		wlr_output_state_set_wait_timeline(&pending, buffer->wait_timeline, buffer->wait_point);
+	}
 
 	if (!wlr_output_test_state(scene_output->output, &pending)) {
 		wlr_output_state_finish(&pending);

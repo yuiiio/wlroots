@@ -191,6 +191,9 @@ struct wlr_scene_buffer {
 	int buffer_width, buffer_height;
 	bool buffer_is_opaque;
 
+	struct wlr_drm_syncobj_timeline *wait_timeline;
+	uint64_t wait_point;
+
 	struct wl_listener buffer_release;
 	struct wl_listener renderer_destroy;
 };
@@ -411,6 +414,10 @@ struct wlr_scene_buffer_set_buffer_options {
 	// The damage region is in buffer-local coordinates. If the region is NULL,
 	// the whole buffer node will be damaged.
 	const pixman_region32_t *damage;
+
+	// Wait for a timeline synchronization point before reading from the buffer.
+	struct wlr_drm_syncobj_timeline *wait_timeline;
+	uint64_t wait_point;
 };
 
 /**
