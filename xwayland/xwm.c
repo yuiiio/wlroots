@@ -1392,11 +1392,6 @@ static bool update_state(int action, bool *state) {
 	return changed;
 }
 
-static bool xsurface_is_maximized(
-		struct wlr_xwayland_surface *xsurface) {
-	return xsurface->maximized_horz && xsurface->maximized_vert;
-}
-
 static void xwm_handle_net_wm_state_message(struct wlr_xwm *xwm,
 		xcb_client_message_event_t *client_message) {
 	struct wlr_xwayland_surface *xsurface =
@@ -1409,7 +1404,8 @@ static void xwm_handle_net_wm_state_message(struct wlr_xwm *xwm,
 	}
 
 	bool fullscreen = xsurface->fullscreen;
-	bool maximized = xsurface_is_maximized(xsurface);
+	bool maximized_vert = xsurface->maximized_vert;
+	bool maximized_horz = xsurface->maximized_horz;
 	bool minimized = xsurface->minimized;
 
 	uint32_t action = client_message->data.data32[0];
@@ -1445,7 +1441,9 @@ static void xwm_handle_net_wm_state_message(struct wlr_xwm *xwm,
 		wl_signal_emit_mutable(&xsurface->events.request_fullscreen, NULL);
 	}
 
-	if (maximized != xsurface_is_maximized(xsurface)) {
+	if (maximized_vert != xsurface->maximized_vert
+			|| maximized_horz != xsurface->maximized_horz) {
+
 		wl_signal_emit_mutable(&xsurface->events.request_maximize, NULL);
 	}
 
@@ -2342,9 +2340,9 @@ void wlr_xwayland_surface_set_minimized(struct wlr_xwayland_surface *surface,
 }
 
 void wlr_xwayland_surface_set_maximized(struct wlr_xwayland_surface *surface,
-		bool maximized) {
-	surface->maximized_horz = maximized;
-	surface->maximized_vert = maximized;
+		bool maximized_horz, bool maximized_vert) {
+	surface->maximized_horz = maximized_horz;
+	surface->maximized_vert = maximized_vert;
 	xsurface_set_net_wm_state(surface);
 	xcb_flush(surface->xwm->xcb_conn);
 }
