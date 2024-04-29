@@ -57,11 +57,11 @@ struct wlr_xwayland {
 	} events;
 
 	/**
-	 * Add a custom event handler to xwayland. Return 1 if the event was
-	 * handled or 0 to use the default wlr-xwayland handler. wlr-xwayland will
+	 * Add a custom event handler to xwayland. Return true if the event was
+	 * handled or false to use the default wlr-xwayland handler. wlr-xwayland will
 	 * free the event.
 	 */
-	int (*user_event_handler)(struct wlr_xwm *xwm, xcb_generic_event_t *event);
+	bool (*user_event_handler)(struct wlr_xwayland *wlr_xwayland, xcb_generic_event_t *event);
 
 	void *data;
 
