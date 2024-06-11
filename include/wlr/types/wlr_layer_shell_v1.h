@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_compositor.h>
+#include <wlr/util/edges.h>
 #include "wlr-layer-shell-unstable-v1-protocol.h"
 
 /**
@@ -186,5 +187,12 @@ struct wlr_surface *wlr_layer_surface_v1_popup_surface_at(
  */
 struct wlr_layer_surface_v1 *wlr_layer_surface_v1_from_resource(
 		struct wl_resource *resource);
+
+/**
+ * Get the edge the exclusive zone must be applied to.
+ *
+ * Returns WLR_EDGE_NONE if the exclusive zone is nonpositive or must not be applied.
+ */
+enum wlr_edges wlr_layer_surface_v1_get_exclusive_edge(struct wlr_layer_surface_v1 *surface);
 
 #endif
