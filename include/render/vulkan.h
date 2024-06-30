@@ -518,7 +518,7 @@ void vulkan_change_layout(VkCommandBuffer cb, VkImage img,
 #if __STDC_VERSION__ >= 202311L
 
 #define wlr_vk_error(fmt, res, ...) wlr_log(WLR_ERROR, fmt ": %s (%d)", \
-	vulkan_strerror(res), res __VA_OPT(,) __VA_ARGS__)
+	vulkan_strerror(res), res __VA_OPT__(,) __VA_ARGS__)
 
 #else
 
