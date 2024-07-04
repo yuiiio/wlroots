@@ -136,7 +136,6 @@ void handle_pointer_axis(struct libinput_event *event,
 	wl_signal_emit_mutable(&pointer->events.frame, pointer);
 }
 
-#if HAVE_LIBINPUT_SCROLL_VALUE120
 void handle_pointer_axis_value120(struct libinput_event *event,
 		struct wlr_pointer *pointer, enum wl_pointer_axis_source source) {
 	struct libinput_event_pointer *pevent =
@@ -173,7 +172,6 @@ void handle_pointer_axis_value120(struct libinput_event *event,
 	}
 	wl_signal_emit_mutable(&pointer->events.frame, pointer);
 }
-#endif
 
 void handle_pointer_swipe_begin(struct libinput_event *event,
 		struct wlr_pointer *pointer) {

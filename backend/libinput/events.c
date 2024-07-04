@@ -167,12 +167,8 @@ void handle_libinput_event(struct wlr_libinput_backend *backend,
 		handle_pointer_button(event, &dev->pointer);
 		break;
 	case LIBINPUT_EVENT_POINTER_AXIS:
-#if !HAVE_LIBINPUT_SCROLL_VALUE120
 		/* This event must be ignored in favour of the SCROLL_* events */
-		handle_pointer_axis(event, &dev->pointer);
-#endif
 		break;
-#if HAVE_LIBINPUT_SCROLL_VALUE120
 	case LIBINPUT_EVENT_POINTER_SCROLL_WHEEL:
 		handle_pointer_axis_value120(event, &dev->pointer,
 			WL_POINTER_AXIS_SOURCE_WHEEL);
@@ -185,7 +181,6 @@ void handle_libinput_event(struct wlr_libinput_backend *backend,
 		handle_pointer_axis_value120(event, &dev->pointer,
 			WL_POINTER_AXIS_SOURCE_CONTINUOUS);
 		break;
-#endif
 	case LIBINPUT_EVENT_TOUCH_DOWN:
 		handle_touch_down(event, &dev->touch);
 		break;
@@ -243,14 +238,12 @@ void handle_libinput_event(struct wlr_libinput_backend *backend,
 	case LIBINPUT_EVENT_GESTURE_PINCH_END:
 		handle_pointer_pinch_end(event, &dev->pointer);
 		break;
-#if HAVE_LIBINPUT_HOLD_GESTURES
 	case LIBINPUT_EVENT_GESTURE_HOLD_BEGIN:
 		handle_pointer_hold_begin(event, &dev->pointer);
 		break;
 	case LIBINPUT_EVENT_GESTURE_HOLD_END:
 		handle_pointer_hold_end(event, &dev->pointer);
 		break;
-#endif
 	default:
 		wlr_log(WLR_DEBUG, "Unknown libinput event %d", event_type);
 		break;

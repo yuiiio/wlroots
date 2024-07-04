@@ -71,10 +71,8 @@ void handle_pointer_button(struct libinput_event *event,
 	struct wlr_pointer *pointer);
 void handle_pointer_axis(struct libinput_event *event,
 	struct wlr_pointer *pointer);
-#if HAVE_LIBINPUT_SCROLL_VALUE120
 void handle_pointer_axis_value120(struct libinput_event *event,
 	struct wlr_pointer *pointer, enum wl_pointer_axis_source source);
-#endif
 void handle_pointer_swipe_begin(struct libinput_event *event,
 	struct wlr_pointer *pointer);
 void handle_pointer_swipe_update(struct libinput_event *event,
