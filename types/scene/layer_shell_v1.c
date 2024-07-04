@@ -9,8 +9,6 @@ static void scene_layer_surface_handle_tree_destroy(
 	// tree and surface_node will be cleaned up by scene_node_finish
 	wl_list_remove(&scene_layer_surface->tree_destroy.link);
 	wl_list_remove(&scene_layer_surface->layer_surface_destroy.link);
-	wl_list_remove(&scene_layer_surface->layer_surface_map.link);
-	wl_list_remove(&scene_layer_surface->layer_surface_unmap.link);
 	free(scene_layer_surface);
 }
 
@@ -19,20 +17,6 @@ static void scene_layer_surface_handle_layer_surface_destroy(
 	struct wlr_scene_layer_surface_v1 *scene_layer_surface =
 		wl_container_of(listener, scene_layer_surface, layer_surface_destroy);
 	wlr_scene_node_destroy(&scene_layer_surface->tree->node);
-}
-
-static void scene_layer_surface_handle_layer_surface_map(
-		struct wl_listener *listener, void *data) {
-	struct wlr_scene_layer_surface_v1 *scene_layer_surface =
-		wl_container_of(listener, scene_layer_surface, layer_surface_map);
-	wlr_scene_node_set_enabled(&scene_layer_surface->tree->node, true);
-}
-
-static void scene_layer_surface_handle_layer_surface_unmap(
-		struct wl_listener *listener, void *data) {
-	struct wlr_scene_layer_surface_v1 *scene_layer_surface =
-		wl_container_of(listener, scene_layer_surface, layer_surface_unmap);
-	wlr_scene_node_set_enabled(&scene_layer_surface->tree->node, false);
 }
 
 static void layer_surface_exclusive_zone(
@@ -175,16 +159,6 @@ struct wlr_scene_layer_surface_v1 *wlr_scene_layer_surface_v1_create(
 		scene_layer_surface_handle_layer_surface_destroy;
 	wl_signal_add(&layer_surface->events.destroy,
 		&scene_layer_surface->layer_surface_destroy);
-
-	scene_layer_surface->layer_surface_map.notify =
-		scene_layer_surface_handle_layer_surface_map;
-	wl_signal_add(&layer_surface->surface->events.map,
-		&scene_layer_surface->layer_surface_map);
-
-	scene_layer_surface->layer_surface_unmap.notify =
-		scene_layer_surface_handle_layer_surface_unmap;
-	wl_signal_add(&layer_surface->surface->events.unmap,
-		&scene_layer_surface->layer_surface_unmap);
 
 	wlr_scene_node_set_enabled(&scene_layer_surface->tree->node,
 		layer_surface->surface->mapped);
