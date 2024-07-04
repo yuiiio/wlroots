@@ -60,8 +60,6 @@ struct wlr_scene_tree *wlr_scene_drag_icon_create(
 		return NULL;
 	}
 
-	wlr_scene_node_set_enabled(&icon->tree->node, drag_icon->surface->mapped);
-
 	icon->tree_destroy.notify = drag_icon_handle_tree_destroy;
 	wl_signal_add(&icon->tree->node.events.destroy, &icon->tree_destroy);
 	icon->drag_icon_surface_commit.notify = drag_icon_handle_surface_commit;

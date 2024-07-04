@@ -160,8 +160,5 @@ struct wlr_scene_layer_surface_v1 *wlr_scene_layer_surface_v1_create(
 	wl_signal_add(&layer_surface->events.destroy,
 		&scene_layer_surface->layer_surface_destroy);
 
-	wlr_scene_node_set_enabled(&scene_layer_surface->tree->node,
-		layer_surface->surface->mapped);
-
 	return scene_layer_surface;
 }

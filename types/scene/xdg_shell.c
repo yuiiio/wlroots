@@ -93,8 +93,6 @@ struct wlr_scene_tree *wlr_scene_xdg_surface_create(
 	wl_signal_add(&xdg_surface->surface->events.commit,
 		&scene_xdg_surface->xdg_surface_commit);
 
-	wlr_scene_node_set_enabled(&scene_xdg_surface->tree->node,
-		xdg_surface->surface->mapped);
 	scene_xdg_surface_update_position(scene_xdg_surface);
 
 	return scene_xdg_surface->tree;
