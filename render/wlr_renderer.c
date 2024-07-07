@@ -73,7 +73,7 @@ const struct wlr_drm_format_set *wlr_renderer_get_render_formats(
 
 bool wlr_renderer_init_wl_shm(struct wlr_renderer *r,
 		struct wl_display *wl_display) {
-	return wlr_shm_create_with_renderer(wl_display, 1, r) != NULL;
+	return wlr_shm_create_with_renderer(wl_display, 2, r) != NULL;
 }
 
 bool wlr_renderer_init_wl_display(struct wlr_renderer *r,
