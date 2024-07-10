@@ -33,12 +33,12 @@ tasks:
       ninja
       sudo ninja install
       cd ../tinywl
-      CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" make
+      make
   - clang: |
       cd wlroots/build-clang
       ninja
   - smoke-test: |
-      cd wlroots/tinywl
+      cd wlroots/build-gcc/tinywl
       sudo modprobe vkms
       udevadm settle
       export WLR_BACKENDS=drm
