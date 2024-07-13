@@ -370,12 +370,6 @@ void wlr_output_lock_attach_render(struct wlr_output *output, bool lock);
  */
 void wlr_output_lock_software_cursors(struct wlr_output *output, bool lock);
 /**
- * Renders software cursors. This is a utility function that can be called when
- * compositors render.
- */
-void wlr_output_render_software_cursors(struct wlr_output *output,
-	const pixman_region32_t *damage);
-/**
  * Render software cursors.
  *
  * This is a utility function that can be called when compositors render.
