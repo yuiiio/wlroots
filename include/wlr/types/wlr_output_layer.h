@@ -23,16 +23,16 @@
  *
  * To configure output layers, callers should call wlr_output_layer_create() to
  * create layers, attach struct wlr_output_layer_state onto
- * struct wlr_output_state via wlr_output_set_layers() to describe their new
- * state, and commit the output via wlr_output_commit().
+ * struct wlr_output_state via wlr_output_state_set_layers() to describe their new
+ * state, and commit the output via wlr_output_commit_state().
  *
  * Backends may have arbitrary limitations when it comes to displaying output
  * layers. Backends indicate whether or not a layer can be displayed via
- * wlr_output_layer_state.accepted after wlr_output_test() or
- * wlr_output_commit() is called. Compositors using the output layers API
- * directly are expected to setup layers, call wlr_output_test(), paint the
- * layers that the backend rejected with the renderer, then call
- * wlr_output_commit().
+ * wlr_output_layer_state.accepted after wlr_output_test_state() or
+ * wlr_output_commit_state() is called. Compositors using the output layers API
+ * directly are expected to setup layers, call wlr_output_test_state(), paint
+ * the layers that the backend rejected with the renderer, then call
+ * wlr_output_commit_state().
  *
  * Callers are responsible for disabling output layers when they need the full
  * output contents to be composited onto a single buffer, e.g. during screen
@@ -72,9 +72,9 @@ struct wlr_output_layer_state {
 	// to damage the whole buffer.
 	const pixman_region32_t *damage;
 
-	// Populated by the backend after wlr_output_test() and wlr_output_commit(),
-	// indicates whether the backend has acknowledged and will take care of
-	// displaying the layer
+	// Populated by the backend after wlr_output_test_state() and
+	// wlr_output_commit_state(), indicates whether the backend has acknowledged
+	// and will take care of displaying the layer
 	bool accepted;
 };
 

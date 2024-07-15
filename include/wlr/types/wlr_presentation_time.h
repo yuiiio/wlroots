@@ -89,7 +89,7 @@ void wlr_presentation_event_from_output(struct wlr_presentation_event *event,
  *
  * Instead of calling wlr_presentation_surface_sampled() and managing the
  * struct wlr_presentation_feedback itself, the compositor can call this function
- * before a wlr_output_commit() call to indicate that the surface's current
+ * before a wlr_output_commit_state() call to indicate that the surface's current
  * contents have been copied to a buffer which will be displayed on the output.
  */
 void wlr_presentation_surface_textured_on_output(struct wlr_surface *surface,

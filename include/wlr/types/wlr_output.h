@@ -121,8 +121,9 @@ struct wlr_render_pass;
  * The `frame` event will be emitted when it is a good time for the compositor
  * to submit a new frame.
  *
- * To render a new frame, compositors should call wlr_output_begin_render_pass(),
- * perform rendering on that render pass and finally call wlr_output_commit().
+ * To render a new frame compositors should call wlr_output_begin_render_pass(),
+ * perform rendering on that render pass, and finally call
+ * wlr_output_commit_state().
  */
 struct wlr_output {
 	const struct wlr_output_impl *impl;
@@ -280,7 +281,7 @@ void wlr_output_destroy_global(struct wlr_output *output);
  * the allocator and renderer to different values.
  *
  * Call this function prior to any call to wlr_output_begin_render_pass(),
- * wlr_output_commit() or wlr_output_cursor_create().
+ * wlr_output_commit_state() or wlr_output_cursor_create().
  *
  * The buffer capabilities of the provided must match the capabilities of the
  * output's backend. Returns false otherwise.
