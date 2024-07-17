@@ -1671,13 +1671,6 @@ static bool construct_render_list_iterator(struct wlr_scene_node *node,
 	return false;
 }
 
-static void output_state_apply_damage(const struct render_data *data,
-		struct wlr_output_state *state) {
-	struct wlr_scene_output *output = data->output;
-
-	wlr_output_state_set_damage(state, &output->pending_commit_damage);
-}
-
 static void scene_buffer_send_dmabuf_feedback(const struct wlr_scene *scene,
 		struct wlr_scene_buffer *scene_buffer,
 		const struct wlr_linux_dmabuf_feedback_v1_init_options *options) {
@@ -1942,7 +1935,7 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 		pixman_region32_fini(&acc_damage);
 	}
 
-	output_state_apply_damage(&render_data, state);
+	wlr_output_state_set_damage(state, &scene_output->pending_commit_damage);
 
 	// We only want to try direct scanout if:
 	// - There is only one entry in the render list
