@@ -271,6 +271,7 @@ static void scene_node_opaque_region(struct wlr_scene_node *node, int x, int y,
 struct scene_update_data {
 	pixman_region32_t *visible;
 	pixman_region32_t *update_region;
+	struct wlr_box update_box;
 	struct wl_list *outputs;
 	bool calculate_visibility;
 };
@@ -514,23 +515,22 @@ static void scene_update_region(struct wlr_scene *scene,
 	pixman_region32_init(&visible);
 	pixman_region32_copy(&visible, update_region);
 
+	struct pixman_box32 *region_box = pixman_region32_extents(update_region);
 	struct scene_update_data data = {
 		.visible = &visible,
 		.update_region = update_region,
+		.update_box = {
+			.x = region_box->x1,
+			.y = region_box->y1,
+			.width = region_box->x2 - region_box->x1,
+			.height = region_box->y2 - region_box->y1,
+		},
 		.outputs = &scene->outputs,
 		.calculate_visibility = scene->calculate_visibility,
 	};
 
-	struct pixman_box32 *region_box = pixman_region32_extents(update_region);
-	struct wlr_box box = {
-		.x = region_box->x1,
-		.y = region_box->y1,
-		.width = region_box->x2 - region_box->x1,
-		.height = region_box->y2 - region_box->y1,
-	};
-
 	// update node visibility and output enter/leave events
-	scene_nodes_in_box(&scene->tree.node, &box, scene_node_update_iterator, &data);
+	scene_nodes_in_box(&scene->tree.node, &data.update_box, scene_node_update_iterator, &data);
 
 	pixman_region32_fini(&visible);
 }
