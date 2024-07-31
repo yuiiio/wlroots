@@ -20,6 +20,12 @@
 #include "util/env.h"
 #include "util/time.h"
 
+#include <wlr/config.h>
+
+#if WLR_HAS_XWAYLAND
+#include <wlr/xwayland/xwayland.h>
+#endif
+
 #define HIGHLIGHT_DAMAGE_FADEOUT_TIME 250
 
 struct wlr_scene_tree *wlr_scene_tree_from_node(struct wlr_scene_node *node) {
@@ -274,6 +280,10 @@ struct scene_update_data {
 	struct wlr_box update_box;
 	struct wl_list *outputs;
 	bool calculate_visibility;
+
+#if WLR_HAS_XWAYLAND
+	struct wlr_xwayland_surface *restack_above;
+#endif
 };
 
 static uint32_t region_area(pixman_region32_t *region) {
@@ -446,6 +456,39 @@ static void update_node_update_outputs(struct wlr_scene_node *node,
 	wl_signal_emit_mutable(&scene_buffer->events.outputs_update, &event);
 }
 
+#if WLR_HAS_XWAYLAND
+static void restack_xwayland_surface(struct wlr_scene_node *node,
+		struct wlr_box *box, struct scene_update_data *data) {
+	if (node->type != WLR_SCENE_NODE_BUFFER) {
+		return;
+	}
+
+	struct wlr_scene_buffer *buffer_node = wlr_scene_buffer_from_node(node);
+	struct wlr_scene_surface *surface_node = wlr_scene_surface_try_from_buffer(buffer_node);
+	if (!surface_node) {
+		return;
+	}
+
+	struct wlr_xwayland_surface *xwayland_surface =
+		wlr_xwayland_surface_try_from_wlr_surface(surface_node->surface);
+	if (!xwayland_surface || xwayland_surface->override_redirect) {
+		return;
+	}
+
+	// ensure this node is entirely inside the update region. If not, we can't
+	// restack this node since we're not considering the whole thing.
+	if (wlr_box_contains_box(&data->update_box, box)) {
+		if (data->restack_above) {
+			wlr_xwayland_surface_restack(xwayland_surface, data->restack_above, XCB_STACK_MODE_BELOW);
+		} else {
+			wlr_xwayland_surface_restack(xwayland_surface, NULL, XCB_STACK_MODE_ABOVE);
+		}
+	}
+
+	data->restack_above = xwayland_surface;
+}
+#endif
+
 static bool scene_node_update_iterator(struct wlr_scene_node *node,
 		int lx, int ly, void *_data) {
 	struct scene_update_data *data = _data;
@@ -467,6 +510,9 @@ static bool scene_node_update_iterator(struct wlr_scene_node *node,
 	}
 
 	update_node_update_outputs(node, data->outputs, NULL, NULL);
+#if WLR_HAS_XWAYLAND
+	restack_xwayland_surface(node, &box, data);
+#endif
 
 	return false;
 }
