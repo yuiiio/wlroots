@@ -46,6 +46,7 @@ static void output_power_handle_output_destroy(struct wl_listener *listener,
 		void *data) {
 	struct wlr_output_power_v1 *output_power =
 		wl_container_of(listener, output_power, output_destroy_listener);
+	zwlr_output_power_v1_send_failed(output_power->resource);
 	output_power_destroy(output_power);
 }
 
