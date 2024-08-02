@@ -1443,7 +1443,6 @@ static void xwm_handle_net_wm_state_message(struct wlr_xwm *xwm,
 
 	if (maximized_vert != xsurface->maximized_vert
 			|| maximized_horz != xsurface->maximized_horz) {
-
 		wl_signal_emit_mutable(&xsurface->events.request_maximize, NULL);
 	}
 
