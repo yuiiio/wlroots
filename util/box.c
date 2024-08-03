@@ -79,6 +79,17 @@ bool wlr_box_contains_point(const struct wlr_box *box, double x, double y) {
 	}
 }
 
+bool wlr_box_contains_box(const struct wlr_box *bigger, const struct wlr_box *smaller) {
+	if (wlr_box_empty(bigger) || wlr_box_empty(smaller)) {
+		return false;
+	}
+
+	return smaller->x >= bigger->x &&
+		smaller->x + smaller->width <= bigger->x + bigger->width &&
+		smaller->y >= bigger->y &&
+		smaller->y + smaller->height <= bigger->y + bigger->height;
+}
+
 void wlr_box_transform(struct wlr_box *dest, const struct wlr_box *box,
 		enum wl_output_transform transform, int width, int height) {
 	struct wlr_box src = {0};

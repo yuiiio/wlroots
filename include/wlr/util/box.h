@@ -72,6 +72,14 @@ bool wlr_box_intersection(struct wlr_box *dest, const struct wlr_box *box_a,
 bool wlr_box_contains_point(const struct wlr_box *box, double x, double y);
 
 /**
+ * Verifies that a box is fully contained within another box.
+ *
+ * Returns true if the "smaller" box is fully contained within the "bigger" box.
+ * If either of the boxes are empty, false is returned.
+ */
+bool wlr_box_contains_box(const struct wlr_box *bigger, const struct wlr_box *smaller);
+
+/**
  * Checks whether a box is empty or not.
  *
  * A box is considered empty if its width and/or height is zero or negative.
