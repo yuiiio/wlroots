@@ -274,6 +274,9 @@ out:
 	if (own_drm_fd && drm_fd >= 0) {
 		close(drm_fd);
 	}
+	if (renderer != NULL && env_parse_bool("WLR_RENDER_NO_EXPLICIT_SYNC")) {
+		renderer->features.timeline = false;
+	}
 	return renderer;
 }
 
