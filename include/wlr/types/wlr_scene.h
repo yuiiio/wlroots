@@ -306,6 +306,9 @@ struct wlr_scene_node *wlr_scene_node_at(struct wlr_scene_node *node,
 
 /**
  * Create a new scene-graph.
+ *
+ * The graph is also a wlr_scene_node. Associated resources can be destroyed
+ * through wlr_scene_node_destroy().
  */
 struct wlr_scene *wlr_scene_create(void);
 
