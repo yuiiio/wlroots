@@ -172,6 +172,11 @@ struct wlr_seat_pointer_grab {
 
 #define WLR_POINTER_BUTTONS_CAP 16
 
+struct wlr_seat_pointer_button {
+	uint32_t button;
+	size_t n_pressed;
+};
+
 struct wlr_seat_pointer_state {
 	struct wlr_seat *seat;
 	struct wlr_seat_client *focused_client;
@@ -184,8 +189,9 @@ struct wlr_seat_pointer_state {
 	bool sent_axis_source;
 	enum wl_pointer_axis_source cached_axis_source;
 
-	uint32_t buttons[WLR_POINTER_BUTTONS_CAP];
+	struct wlr_seat_pointer_button buttons[WLR_POINTER_BUTTONS_CAP];
 	size_t button_count;
+
 	uint32_t grab_button;
 	uint32_t grab_serial;
 	uint32_t grab_time;

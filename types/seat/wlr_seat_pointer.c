@@ -6,7 +6,6 @@
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/util/log.h>
 #include "types/wlr_seat.h"
-#include "util/set.h"
 
 static void default_pointer_enter(struct wlr_seat_pointer_grab *grab,
 		struct wlr_surface *surface, double sx, double sy) {
@@ -463,13 +462,37 @@ uint32_t wlr_seat_pointer_notify_button(struct wlr_seat *wlr_seat,
 			pointer_state->grab_button = button;
 			pointer_state->grab_time = time;
 		}
-		set_add(pointer_state->buttons, &pointer_state->button_count,
-			WLR_POINTER_BUTTONS_CAP, button);
+		for (size_t i = 0; i < pointer_state->button_count; i++) {
+			struct wlr_seat_pointer_button *pointer_button = &pointer_state->buttons[i];
+			if (pointer_button->button == button) {
+				++pointer_button->n_pressed;
+				return 0;
+			}
+		}
+		if (pointer_state->button_count == WLR_POINTER_BUTTONS_CAP) {
+			return 0;
+		}
+		pointer_state->buttons[pointer_state->button_count++] = (struct wlr_seat_pointer_button){
+			.button = button,
+			.n_pressed = 1,
+		};
 	} else {
-		set_remove(pointer_state->buttons, &pointer_state->button_count,
-			WLR_POINTER_BUTTONS_CAP, button);
+		bool found = false;
+		for (size_t i = 0; i < pointer_state->button_count; i++) {
+			struct wlr_seat_pointer_button *pointer_button = &pointer_state->buttons[i];
+			if (pointer_button->button == button) {
+				if (--pointer_button->n_pressed > 0) {
+					return 0;
+				}
+				*pointer_button = pointer_state->buttons[--pointer_state->button_count];
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return 0;
+		}
 	}
-
 
 	struct wlr_seat_pointer_grab *grab = pointer_state->grab;
 	uint32_t serial = grab->interface->button(grab, time, button, state);
