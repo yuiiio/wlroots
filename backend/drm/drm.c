@@ -14,6 +14,7 @@
 #include <wayland-util.h>
 #include <wlr/backend/interface.h>
 #include <wlr/interfaces/wlr_output.h>
+#include <wlr/render/drm_syncobj.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
@@ -693,6 +694,7 @@ static void drm_connector_state_init(struct wlr_drm_connector_state *state,
 static void drm_connector_state_finish(struct wlr_drm_connector_state *state) {
 	drm_fb_clear(&state->primary_fb);
 	drm_fb_clear(&state->cursor_fb);
+	wlr_drm_syncobj_timeline_unref(state->wait_timeline);
 }
 
 static bool drm_connector_state_update_primary_fb(struct wlr_drm_connector *conn,
@@ -706,6 +708,14 @@ static bool drm_connector_state_update_primary_fb(struct wlr_drm_connector *conn
 
 	struct wlr_drm_plane *plane = crtc->primary;
 	struct wlr_buffer *source_buf = state->base->buffer;
+
+	struct wlr_drm_syncobj_timeline *wait_timeline = NULL;
+	uint64_t wait_point = 0;
+	if (state->base->committed & WLR_OUTPUT_STATE_WAIT_TIMELINE) {
+		wait_timeline = state->base->wait_timeline;
+		wait_point = state->base->wait_point;
+	}
+	assert(state->wait_timeline == NULL);
 
 	struct wlr_buffer *local_buf;
 	if (drm->parent) {
@@ -723,12 +733,23 @@ static bool drm_connector_state_update_primary_fb(struct wlr_drm_connector *conn
 			return false;
 		}
 
-		local_buf = drm_surface_blit(&plane->mgpu_surf, source_buf);
+		local_buf = drm_surface_blit(&plane->mgpu_surf, source_buf,
+			wait_timeline, wait_point);
 		if (local_buf == NULL) {
 			return false;
 		}
+
+		if (plane->mgpu_surf.timeline != NULL) {
+			state->wait_timeline = wlr_drm_syncobj_timeline_ref(plane->mgpu_surf.timeline);
+			state->wait_point = plane->mgpu_surf.point;
+		}
 	} else {
 		local_buf = wlr_buffer_lock(source_buf);
+
+		if (wait_timeline != NULL) {
+			state->wait_timeline = wlr_drm_syncobj_timeline_ref(wait_timeline);
+			state->wait_point = wait_point;
+		}
 	}
 
 	bool ok = drm_fb_import(&state->primary_fb, drm, local_buf,
@@ -1088,7 +1109,7 @@ static bool drm_connector_set_cursor(struct wlr_output *output,
 				return false;
 			}
 
-			local_buf = drm_surface_blit(&plane->mgpu_surf, buffer);
+			local_buf = drm_surface_blit(&plane->mgpu_surf, buffer, NULL, 0);
 			if (local_buf == NULL) {
 				return false;
 			}
@@ -1625,9 +1646,11 @@ static bool connect_drm_connector(struct wlr_drm_connector *wlr_conn,
 		output->non_desktop = non_desktop;
 	}
 
-	// TODO: support sync timelines in multi-GPU mode
 	// TODO: support sync timelines with libliftoff
-	output->timeline = drm->parent == NULL && drm->iface == &atomic_iface;
+	output->timeline = drm->iface == &atomic_iface;
+	if (drm->parent) {
+		output->timeline = output->timeline && drm->mgpu_renderer.wlr_rend->features.timeline;
+	}
 
 	memset(wlr_conn->max_bpc_bounds, 0, sizeof(wlr_conn->max_bpc_bounds));
 	if (wlr_conn->props.max_bpc != 0) {

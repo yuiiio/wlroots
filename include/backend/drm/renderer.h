@@ -20,6 +20,9 @@ struct wlr_drm_renderer {
 struct wlr_drm_surface {
 	struct wlr_drm_renderer *renderer;
 	struct wlr_swapchain *swapchain;
+
+	struct wlr_drm_syncobj_timeline *timeline;
+	uint64_t point;
 };
 
 bool init_drm_renderer(struct wlr_drm_backend *drm,
@@ -32,7 +35,8 @@ bool init_drm_surface(struct wlr_drm_surface *surf,
 void finish_drm_surface(struct wlr_drm_surface *surf);
 
 struct wlr_buffer *drm_surface_blit(struct wlr_drm_surface *surf,
-	struct wlr_buffer *buffer);
+	struct wlr_buffer *buffer,
+	struct wlr_drm_syncobj_timeline *wait_timeline, uint64_t wait_point);
 
 bool drm_plane_pick_render_format(struct wlr_drm_plane *plane,
 	struct wlr_drm_format *fmt, struct wlr_drm_renderer *renderer);

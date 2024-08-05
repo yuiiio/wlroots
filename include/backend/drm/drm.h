@@ -141,6 +141,9 @@ struct wlr_drm_connector_state {
 	struct wlr_drm_fb *primary_fb;
 	struct wlr_drm_fb *cursor_fb;
 
+	struct wlr_drm_syncobj_timeline *wait_timeline;
+	uint64_t wait_point;
+
 	// used by atomic
 	uint32_t mode_id;
 	uint32_t gamma_lut;

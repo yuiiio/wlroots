@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <drm_fourcc.h>
+#include <wlr/render/drm_syncobj.h>
 #include <wlr/render/swapchain.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/util/log.h>
@@ -46,6 +47,7 @@ void finish_drm_surface(struct wlr_drm_surface *surf) {
 		return;
 	}
 
+	wlr_drm_syncobj_timeline_unref(surf->timeline);
 	wlr_swapchain_destroy(surf->swapchain);
 
 	*surf = (struct wlr_drm_surface){0};
@@ -68,13 +70,24 @@ bool init_drm_surface(struct wlr_drm_surface *surf,
 		return false;
 	}
 
+	int drm_fd = wlr_renderer_get_drm_fd(renderer->wlr_rend);
+	if (renderer->wlr_rend->features.timeline && drm_fd >= 0) {
+		surf->timeline = wlr_drm_syncobj_timeline_create(drm_fd);
+		if (surf->timeline == NULL) {
+			finish_drm_surface(surf);
+			wlr_log(WLR_ERROR, "Failed to create DRM syncobj timeline");
+			return false;
+		}
+	}
+
 	surf->renderer = renderer;
 
 	return true;
 }
 
 struct wlr_buffer *drm_surface_blit(struct wlr_drm_surface *surf,
-		struct wlr_buffer *buffer) {
+		struct wlr_buffer *buffer,
+		struct wlr_drm_syncobj_timeline *wait_timeline, uint64_t wait_point) {
 	struct wlr_renderer *renderer = surf->renderer->wlr_rend;
 
 	if (surf->swapchain->width != buffer->width ||
@@ -95,7 +108,12 @@ struct wlr_buffer *drm_surface_blit(struct wlr_drm_surface *surf,
 		goto error_tex;
 	}
 
-	struct wlr_render_pass *pass = wlr_renderer_begin_buffer_pass(renderer, dst, NULL);
+	surf->point++;
+	const struct wlr_buffer_pass_options pass_options = {
+		.signal_timeline = surf->timeline,
+		.signal_point = surf->point,
+	};
+	struct wlr_render_pass *pass = wlr_renderer_begin_buffer_pass(renderer, dst, &pass_options);
 	if (pass == NULL) {
 		wlr_log(WLR_ERROR, "Failed to begin render pass with multi-GPU destination buffer");
 		goto error_dst;
@@ -104,6 +122,8 @@ struct wlr_buffer *drm_surface_blit(struct wlr_drm_surface *surf,
 	wlr_render_pass_add_texture(pass, &(struct wlr_render_texture_options){
 		.texture = tex,
 		.blend_mode = WLR_RENDER_BLEND_MODE_NONE,
+		.wait_timeline = wait_timeline,
+		.wait_point = wait_point,
 	});
 	if (!wlr_render_pass_submit(pass)) {
 		wlr_log(WLR_ERROR, "Failed to submit multi-GPU render pass");
