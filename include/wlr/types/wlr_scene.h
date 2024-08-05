@@ -405,6 +405,24 @@ void wlr_scene_buffer_set_buffer_with_damage(struct wlr_scene_buffer *scene_buff
 	struct wlr_buffer *buffer, const pixman_region32_t *region);
 
 /**
+ * Options for wlr_scene_buffer_set_buffer_with_options().
+ */
+struct wlr_scene_buffer_set_buffer_options {
+	// The damage region is in buffer-local coordinates. If the region is NULL,
+	// the whole buffer node will be damaged.
+	const pixman_region32_t *damage;
+};
+
+/**
+ * Sets the buffer's backing buffer.
+ *
+ * If the buffer is NULL, the buffer node will not be displayed. If options is
+ * NULL, empty options are used.
+ */
+void wlr_scene_buffer_set_buffer_with_options(struct wlr_scene_buffer *scene_buffer,
+	struct wlr_buffer *buffer, const struct wlr_scene_buffer_set_buffer_options *options);
+
+/**
  * Sets the buffer's opaque region. This is an optimization hint used to
  * determine if buffers which reside under this one need to be rendered or not.
  */

@@ -686,12 +686,17 @@ struct wlr_scene_buffer *wlr_scene_buffer_create(struct wlr_scene_tree *parent,
 	return scene_buffer;
 }
 
-void wlr_scene_buffer_set_buffer_with_damage(struct wlr_scene_buffer *scene_buffer,
-		struct wlr_buffer *buffer, const pixman_region32_t *damage) {
+void wlr_scene_buffer_set_buffer_with_options(struct wlr_scene_buffer *scene_buffer,
+		struct wlr_buffer *buffer, const struct wlr_scene_buffer_set_buffer_options *options) {
+	const struct wlr_scene_buffer_set_buffer_options default_options = {0};
+	if (options == NULL) {
+		options = &default_options;
+	}
+
 	// specifying a region for a NULL buffer doesn't make sense. We need to know
 	// about the buffer to scale the buffer local coordinates down to scene
 	// coordinates.
-	assert(buffer || !damage);
+	assert(buffer || !options->damage);
 
 	bool mapped = buffer != NULL;
 	bool prev_mapped = scene_buffer->buffer != NULL || scene_buffer->texture != NULL;
@@ -727,6 +732,7 @@ void wlr_scene_buffer_set_buffer_with_damage(struct wlr_scene_buffer *scene_buff
 
 	pixman_region32_t fallback_damage;
 	pixman_region32_init_rect(&fallback_damage, 0, 0, buffer->width, buffer->height);
+	const pixman_region32_t *damage = options->damage;
 	if (!damage) {
 		damage = &fallback_damage;
 	}
@@ -810,9 +816,17 @@ void wlr_scene_buffer_set_buffer_with_damage(struct wlr_scene_buffer *scene_buff
 	pixman_region32_fini(&fallback_damage);
 }
 
+void wlr_scene_buffer_set_buffer_with_damage(struct wlr_scene_buffer *scene_buffer,
+		struct wlr_buffer *buffer, const pixman_region32_t *damage) {
+	const struct wlr_scene_buffer_set_buffer_options options = {
+		.damage = damage,
+	};
+	wlr_scene_buffer_set_buffer_with_options(scene_buffer, buffer, &options);
+}
+
 void wlr_scene_buffer_set_buffer(struct wlr_scene_buffer *scene_buffer,
 		struct wlr_buffer *buffer)  {
-	wlr_scene_buffer_set_buffer_with_damage(scene_buffer, buffer, NULL);
+	wlr_scene_buffer_set_buffer_with_options(scene_buffer, buffer, NULL);
 }
 
 void wlr_scene_buffer_set_opaque_region(struct wlr_scene_buffer *scene_buffer,
