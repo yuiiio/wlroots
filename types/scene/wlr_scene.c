@@ -1242,7 +1242,8 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 			.clip = &render_region,
 			.alpha = &scene_buffer->opacity,
 			.filter_mode = scene_buffer->filter_mode,
-			.blend_mode = pixman_region32_not_empty(&opaque) ?
+			.blend_mode = !data->output->scene->calculate_visibility ||
+					pixman_region32_not_empty(&opaque) ?
 				WLR_RENDER_BLEND_MODE_PREMULTIPLIED : WLR_RENDER_BLEND_MODE_NONE,
 		});
 
