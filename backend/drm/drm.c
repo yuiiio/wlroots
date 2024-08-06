@@ -1646,8 +1646,7 @@ static bool connect_drm_connector(struct wlr_drm_connector *wlr_conn,
 		output->non_desktop = non_desktop;
 	}
 
-	// TODO: support sync timelines with libliftoff
-	output->timeline = drm->iface == &atomic_iface;
+	output->timeline = drm->iface != &legacy_iface;
 	if (drm->parent) {
 		output->timeline = output->timeline && drm->mgpu_renderer.wlr_rend->features.timeline;
 	}
