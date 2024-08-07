@@ -335,11 +335,29 @@ struct wlr_scene_tree *wlr_scene_tree_create(struct wlr_scene_tree *parent);
 /**
  * Add a node displaying a single surface to the scene-graph.
  *
- * The child sub-surfaces are ignored.
+ * The child sub-surfaces are ignored. See wlr_scene_subsurface_tree_create()
  *
- * wlr_surface_send_enter() and wlr_surface_send_leave() will be called
- * automatically based on the position of the surface and outputs in
- * the scene.
+ * Note that this helper does multiple things on behalf of the compositor. Some
+ * of these include protocol implementations where compositors just need to enable
+ * the protocols:
+ *  - wp_viewporter
+ *  - wp_presentation
+ *  - wp_fractional_scale_v1
+ *  - wp_alpha_modifier_v1
+ *  - wp_linux_drm_syncobj_v1
+ *  - zwp_linux_dmabuf_v1 presentation feedback with wlr_scene_set_linux_dmabuf_v1()
+ *
+ * This helper will also transparently:
+ *  - Send preferred buffer scale*
+ *  - Send preferred buffer transform*
+ *  - Restack xwayland surfaces. See wlr_xwayland_surface_restack()**
+ *  - Send output enter/leave events.
+ *
+ * * Note that scale and transform sent to the surface will be based on the output
+ * which has the largest visible surface area. Intelligent visibility calculations
+ * influence this.
+ * ** xwayland stacking order is undefined when the xwayland surfaces do not
+ * intersect.
  */
 struct wlr_scene_surface *wlr_scene_surface_create(struct wlr_scene_tree *parent,
 	struct wlr_surface *surface);
