@@ -348,15 +348,15 @@ struct wlr_scene_tree *wlr_scene_tree_create(struct wlr_scene_tree *parent);
  *  - zwp_linux_dmabuf_v1 presentation feedback with wlr_scene_set_linux_dmabuf_v1()
  *
  * This helper will also transparently:
- *  - Send preferred buffer scale*
- *  - Send preferred buffer transform*
- *  - Restack xwayland surfaces. See wlr_xwayland_surface_restack()**
+ *  - Send preferred buffer scale¹
+ *  - Send preferred buffer transform¹
+ *  - Restack xwayland surfaces. See wlr_xwayland_surface_restack()²
  *  - Send output enter/leave events.
  *
- * * Note that scale and transform sent to the surface will be based on the output
+ * ¹ Note that scale and transform sent to the surface will be based on the output
  * which has the largest visible surface area. Intelligent visibility calculations
  * influence this.
- * ** xwayland stacking order is undefined when the xwayland surfaces do not
+ * ² xwayland stacking order is undefined when the xwayland surfaces do not
  * intersect.
  */
 struct wlr_scene_surface *wlr_scene_surface_create(struct wlr_scene_tree *parent,
