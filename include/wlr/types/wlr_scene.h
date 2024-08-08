@@ -341,7 +341,7 @@ struct wlr_scene_tree *wlr_scene_tree_create(struct wlr_scene_tree *parent);
  * of these include protocol implementations where compositors just need to enable
  * the protocols:
  *  - wp_viewporter
- *  - wp_presentation
+ *  - wp_presentation_time
  *  - wp_fractional_scale_v1
  *  - wp_alpha_modifier_v1
  *  - wp_linux_drm_syncobj_v1
