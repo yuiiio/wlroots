@@ -621,8 +621,13 @@ static void scene_node_update(struct wlr_scene_node *node,
 	struct wlr_scene *scene = scene_node_get_root(node);
 
 	int x, y;
-	bool enabled = wlr_scene_node_coords(node, &x, &y);
-	if (!enabled && !damage) {
+	if (!wlr_scene_node_coords(node, &x, &y)) {
+		if (damage) {
+			scene_update_region(scene, damage);
+			scene_damage_outputs(scene, damage);
+			pixman_region32_fini(damage);
+		}
+
 		return;
 	}
 
@@ -641,10 +646,7 @@ static void scene_node_update(struct wlr_scene_node *node,
 	scene_update_region(scene, &update_region);
 	pixman_region32_fini(&update_region);
 
-	if (enabled) {
-		scene_node_visibility(node, damage);
-	}
-
+	scene_node_visibility(node, damage);
 	scene_damage_outputs(scene, damage);
 	pixman_region32_fini(damage);
 }
