@@ -53,8 +53,6 @@ static void pointer_constraint_destroy(struct wlr_pointer_constraint_v1 *constra
 	wl_list_remove(&constraint->surface_commit.link);
 	wl_list_remove(&constraint->surface_destroy.link);
 	wl_list_remove(&constraint->seat_destroy.link);
-	pixman_region32_fini(&constraint->current.region);
-	pixman_region32_fini(&constraint->pending.region);
 	pixman_region32_fini(&constraint->region);
 	free(constraint);
 }
@@ -257,9 +255,6 @@ static void pointer_constraint_create(struct wl_client *client,
 	wl_signal_init(&constraint->events.destroy);
 
 	pixman_region32_init(&constraint->region);
-
-	pixman_region32_init(&constraint->pending.region);
-	pixman_region32_init(&constraint->current.region);
 
 	pointer_constraint_set_region(constraint, region_resource);
 	pointer_constraint_commit(constraint);
