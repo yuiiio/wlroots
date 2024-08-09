@@ -153,12 +153,11 @@ static void keyboard_unset_keymap(struct wlr_keyboard *kb) {
 
 void wlr_keyboard_finish(struct wlr_keyboard *kb) {
 	/* Release pressed keys */
-	size_t orig_num_keycodes = kb->num_keycodes;
-	for (size_t i = 0; i < orig_num_keycodes; ++i) {
-		assert(kb->num_keycodes == orig_num_keycodes - i);
+	int64_t time_msec = get_current_time_msec();
+	while (kb->num_keycodes > 0) {
 		struct wlr_keyboard_key_event event = {
-			.time_msec = get_current_time_msec(),
-			.keycode = kb->keycodes[orig_num_keycodes - i - 1],
+			.time_msec = time_msec,
+			.keycode = kb->keycodes[kb->num_keycodes - 1],
 			.update_state = false,
 			.state = WL_KEYBOARD_KEY_STATE_RELEASED,
 		};
