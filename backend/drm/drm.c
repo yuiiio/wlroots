@@ -610,6 +610,7 @@ static bool drm_commit(struct wlr_drm_backend *drm,
 		if (page_flip == NULL) {
 			return false;
 		}
+		page_flip->async = (flags & DRM_MODE_PAGE_FLIP_ASYNC);
 	}
 
 	bool ok = drm->iface->commit(drm, state, page_flip, flags, test_only);
@@ -2047,8 +2048,10 @@ static void handle_page_flip(int fd, unsigned seq,
 		drm_fb_move(&layer->current_fb, &layer->queued_fb);
 	}
 
-	uint32_t present_flags = WLR_OUTPUT_PRESENT_VSYNC |
-		WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION;
+	uint32_t present_flags = WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION;
+	if (!page_flip->async) {
+		present_flags |= WLR_OUTPUT_PRESENT_VSYNC;
+	}
 	/* Don't report ZERO_COPY in multi-gpu situations, because we had to copy
 	 * data between the GPUs, even if we were using the direct scanout
 	 * interface.

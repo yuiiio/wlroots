@@ -165,6 +165,8 @@ struct wlr_drm_page_flip {
 	struct wl_list link; // wlr_drm_connector.page_flips
 	struct wlr_drm_page_flip_connector *connectors;
 	size_t connectors_len;
+	// True if DRM_MODE_PAGE_FLIP_ASYNC was set
+	bool async;
 };
 
 struct wlr_drm_page_flip_connector {
