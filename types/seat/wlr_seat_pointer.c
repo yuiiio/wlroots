@@ -179,6 +179,9 @@ void wlr_seat_pointer_enter(struct wlr_seat *wlr_seat,
 		seat_client_send_pointer_leave_raw(focused_client, focused_surface);
 	}
 
+	// The current surface doesn't know about pressed buttons
+	wlr_seat->pointer_state.button_count = 0;
+
 	// enter the current surface
 	if (client != NULL && surface != NULL) {
 		uint32_t serial = wlr_seat_client_next_serial(client);
