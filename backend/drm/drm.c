@@ -398,6 +398,7 @@ void finish_drm_resources(struct wlr_drm_backend *drm) {
 		struct wlr_drm_plane *plane = &drm->planes[i];
 		drm_plane_finish_surface(plane);
 		wlr_drm_format_set_finish(&plane->formats);
+		free(plane->cursor_sizes);
 	}
 
 	free(drm->planes);
