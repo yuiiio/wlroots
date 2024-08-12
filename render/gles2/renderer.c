@@ -15,6 +15,7 @@
 #include <wlr/types/wlr_matrix.h>
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
+#include <xf86drm.h>
 #include "render/egl.h"
 #include "render/gles2.h"
 #include "render/pixel_format.h"
@@ -684,8 +685,12 @@ struct wlr_renderer *wlr_gles2_renderer_create(struct wlr_egl *egl) {
 
 	get_gles2_shm_formats(renderer, &renderer->shm_texture_formats);
 
-	renderer->wlr_renderer.features.timeline =
-		egl->procs.eglDupNativeFenceFDANDROID && egl->procs.eglWaitSyncKHR;
+	int drm_fd = wlr_renderer_get_drm_fd(&renderer->wlr_renderer);
+	uint64_t cap_syncobj_timeline;
+	if (drm_fd >= 0 && drmGetCap(drm_fd, DRM_CAP_SYNCOBJ_TIMELINE, &cap_syncobj_timeline) == 0) {
+		renderer->wlr_renderer.features.timeline = egl->procs.eglDupNativeFenceFDANDROID &&
+			egl->procs.eglWaitSyncKHR && cap_syncobj_timeline != 0;
+	}
 
 	return &renderer->wlr_renderer;
 
