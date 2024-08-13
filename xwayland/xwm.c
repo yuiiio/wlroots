@@ -1859,6 +1859,16 @@ static void handle_shell_v1_new_surface(struct wl_listener *listener,
 	}
 }
 
+static void handle_shell_v1_destroy(struct wl_listener *listener,
+		void *data) {
+	struct wlr_xwm *xwm =
+		wl_container_of(listener, xwm, shell_v1_destroy);
+	wl_list_remove(&xwm->shell_v1_new_surface.link);
+	wl_list_remove(&xwm->shell_v1_destroy.link);
+	wl_list_init(&xwm->shell_v1_new_surface.link);
+	wl_list_init(&xwm->shell_v1_destroy.link);
+}
+
 void wlr_xwayland_surface_activate(struct wlr_xwayland_surface *xsurface,
 		bool activated) {
 	struct wlr_xwayland_surface *focused = xsurface->xwm->focus_surface;
@@ -1986,6 +1996,7 @@ void xwm_destroy(struct wlr_xwm *xwm) {
 	wl_list_remove(&xwm->compositor_new_surface.link);
 	wl_list_remove(&xwm->compositor_destroy.link);
 	wl_list_remove(&xwm->shell_v1_new_surface.link);
+	wl_list_remove(&xwm->shell_v1_destroy.link);
 	xcb_disconnect(xwm->xcb_conn);
 
 	struct pending_startup_id *pending, *next;
@@ -2331,6 +2342,9 @@ struct wlr_xwm *xwm_create(struct wlr_xwayland *xwayland, int wm_fd) {
 	xwm->shell_v1_new_surface.notify = handle_shell_v1_new_surface;
 	wl_signal_add(&xwayland->shell_v1->events.new_surface,
 		&xwm->shell_v1_new_surface);
+	xwm->shell_v1_destroy.notify = handle_shell_v1_destroy;
+	wl_signal_add(&xwayland->shell_v1->events.destroy,
+		&xwm->shell_v1_destroy);
 
 	xwm_create_wm_window(xwm);
 
