@@ -1447,22 +1447,13 @@ static void scene_output_handle_commit(struct wl_listener *listener, void *data)
 	// if the output has been committed with a certain damage, we know that region
 	// will be acknowledged by the backend so we don't need to keep track of it
 	// anymore
-	if (state->committed & WLR_OUTPUT_STATE_DAMAGE) {
-		bool tracking_buffer = false;
-		struct wlr_damage_ring_buffer *buffer;
-		wl_list_for_each(buffer, &scene_output->damage_ring.buffers, link) {
-			if (buffer->buffer == state->buffer) {
-				tracking_buffer = true;
-				break;
-			}
-		}
-
-		if (tracking_buffer) {
+	if (state->committed & WLR_OUTPUT_STATE_BUFFER) {
+		if (state->committed & WLR_OUTPUT_STATE_DAMAGE) {
 			pixman_region32_subtract(&scene_output->pending_commit_damage,
 				&scene_output->pending_commit_damage, &state->damage);
 		} else {
-			pixman_region32_union(&scene_output->pending_commit_damage,
-				&scene_output->pending_commit_damage, &state->damage);
+			pixman_region32_fini(&scene_output->pending_commit_damage);
+			pixman_region32_init(&scene_output->pending_commit_damage);
 		}
 	}
 
