@@ -219,12 +219,12 @@ static void xdg_surface_handle_set_window_geometry(struct wl_client *client,
 	}
 
 	if (width <= 0 || height <= 0) {
-		wl_resource_post_error(resource,
-			XDG_SURFACE_ERROR_INVALID_SIZE,
+		wl_resource_post_error(resource, XDG_SURFACE_ERROR_INVALID_SIZE,
 			"Tried to set invalid xdg-surface geometry");
 		return;
 	}
 
+	surface->pending.committed |= WLR_XDG_SURFACE_STATE_WINDOW_GEOMETRY;
 	surface->pending.geometry.x = x;
 	surface->pending.geometry.y = y;
 	surface->pending.geometry.width = width;
@@ -255,6 +255,21 @@ static const struct xdg_surface_interface xdg_surface_implementation = {
 	.ack_configure = xdg_surface_handle_ack_configure,
 	.set_window_geometry = xdg_surface_handle_set_window_geometry,
 };
+
+// The window geometry is updated on commit, unless the commit is going to map
+// the surface, in which case it's updated on map, so that subsurfaces are
+// mapped and surface extents are computed correctly.
+static void update_geometry(struct wlr_xdg_surface *surface) {
+	if (!wlr_box_empty(&surface->current.geometry)) {
+		if ((surface->current.committed & WLR_XDG_SURFACE_STATE_WINDOW_GEOMETRY) != 0) {
+			wlr_surface_get_extents(surface->surface, &surface->geometry);
+			wlr_box_intersection(&surface->geometry,
+				&surface->current.geometry, &surface->geometry);
+		}
+	} else {
+		wlr_surface_get_extents(surface->surface, &surface->geometry);
+	}
+}
 
 static void xdg_surface_role_client_commit(struct wlr_surface *wlr_surface) {
 	struct wlr_xdg_surface *surface = wlr_xdg_surface_try_from_wlr_surface(wlr_surface);
@@ -320,9 +335,18 @@ static void xdg_surface_role_commit(struct wlr_surface *wlr_surface) {
 		break;
 	}
 
-	if (wlr_surface_has_buffer(wlr_surface)) {
+	if (wlr_surface->mapped) {
+		update_geometry(surface);
+	} else if (wlr_surface_has_buffer(wlr_surface)) {
 		wlr_surface_map(wlr_surface);
 	}
+}
+
+static void xdg_surface_role_map(struct wlr_surface *wlr_surface) {
+	struct wlr_xdg_surface *surface = wlr_xdg_surface_try_from_wlr_surface(wlr_surface);
+	assert(surface != NULL);
+
+	update_geometry(surface);
 }
 
 static void xdg_surface_role_destroy(struct wlr_surface *wlr_surface) {
@@ -339,11 +363,19 @@ static const struct wlr_surface_role xdg_surface_role = {
 	.name = "xdg_surface",
 	.client_commit = xdg_surface_role_client_commit,
 	.commit = xdg_surface_role_commit,
+	.map = xdg_surface_role_map,
 	.destroy = xdg_surface_role_destroy,
 };
 
+static void surface_synced_move_state(void *_dst, void *_src) {
+	struct wlr_xdg_surface_state *dst = _dst, *src = _src;
+	*dst = *src;
+	src->committed = 0;
+}
+
 static const struct wlr_surface_synced_impl surface_synced_impl = {
 	.state_size = sizeof(struct wlr_xdg_surface_state),
+	.move_state = surface_synced_move_state,
 };
 
 struct wlr_xdg_surface *wlr_xdg_surface_try_from_wlr_surface(
@@ -522,12 +554,8 @@ void wlr_xdg_popup_get_position(struct wlr_xdg_popup *popup,
 		double *popup_sx, double *popup_sy) {
 	struct wlr_xdg_surface *parent = wlr_xdg_surface_try_from_wlr_surface(popup->parent);
 	assert(parent != NULL);
-	struct wlr_box parent_geo;
-	wlr_xdg_surface_get_geometry(parent, &parent_geo);
-	*popup_sx = parent_geo.x + popup->current.geometry.x -
-		popup->base->current.geometry.x;
-	*popup_sy = parent_geo.y + popup->current.geometry.y -
-		popup->base->current.geometry.y;
+	*popup_sx = parent->geometry.x + popup->current.geometry.x - popup->base->geometry.x;
+	*popup_sy = parent->geometry.y + popup->current.geometry.y - popup->base->geometry.y;
 }
 
 struct wlr_surface *wlr_xdg_surface_surface_at(
@@ -610,16 +638,4 @@ void wlr_xdg_surface_for_each_surface(struct wlr_xdg_surface *surface,
 void wlr_xdg_surface_for_each_popup_surface(struct wlr_xdg_surface *surface,
 		wlr_surface_iterator_func_t iterator, void *user_data) {
 	xdg_surface_for_each_popup_surface(surface, 0, 0, iterator, user_data);
-}
-
-void wlr_xdg_surface_get_geometry(struct wlr_xdg_surface *surface,
-		struct wlr_box *box) {
-	wlr_surface_get_extents(surface->surface, box);
-
-	/* The client never set the geometry */
-	if (wlr_box_empty(&surface->current.geometry)) {
-		return;
-	}
-
-	wlr_box_intersection(box, &surface->current.geometry, box);
 }

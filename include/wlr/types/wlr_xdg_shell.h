@@ -228,9 +228,16 @@ struct wlr_xdg_surface_configure {
 	};
 };
 
+enum wlr_xdg_surface_state_field {
+	WLR_XDG_SURFACE_STATE_WINDOW_GEOMETRY = 1 << 0,
+};
+
 struct wlr_xdg_surface_state {
-	uint32_t configure_serial;
+	uint32_t committed; // enum wlr_xdg_surface_state_field
+
 	struct wlr_box geometry;
+
+	uint32_t configure_serial;
 };
 
 /**
@@ -273,6 +280,8 @@ struct wlr_xdg_surface {
 	bool initialized;
 	// Whether the latest commit is an initial commit
 	bool initial_commit;
+
+	struct wlr_box geometry;
 
 	struct {
 		struct wl_signal destroy;
@@ -522,17 +531,6 @@ struct wlr_xdg_toplevel *wlr_xdg_toplevel_try_from_wlr_surface(struct wlr_surfac
  * been destroyed.
  */
 struct wlr_xdg_popup *wlr_xdg_popup_try_from_wlr_surface(struct wlr_surface *surface);
-
-/**
- * Get the surface geometry.
- *
- * This is either the geometry as set by the client, or defaulted to the bounds
- * of the surface + the subsurfaces (as specified by the protocol).
- *
- * The x and y value can be < 0.
- */
-void wlr_xdg_surface_get_geometry(struct wlr_xdg_surface *surface,
-		struct wlr_box *box);
 
 /**
  * Call `iterator` on each mapped surface and popup in the xdg-surface tree
