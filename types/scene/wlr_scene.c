@@ -332,6 +332,27 @@ static void scene_output_damage(struct wlr_scene_output *scene_output,
 		const pixman_region32_t *region) {
 	if (wlr_damage_ring_add(&scene_output->damage_ring, region)) {
 		wlr_output_schedule_frame(scene_output->output);
+
+		struct wlr_output *output = scene_output->output;
+		enum wl_output_transform transform =
+			wlr_output_transform_invert(scene_output->output->transform);
+
+		int width = output->width;
+		int height = output->height;
+		if (transform & WL_OUTPUT_TRANSFORM_90) {
+			width = output->height;
+			height = output->width;
+		}
+
+		pixman_region32_t frame_damage;
+		pixman_region32_init(&frame_damage);
+		wlr_region_transform(&frame_damage, region, transform, width, height);
+
+		pixman_region32_union(&scene_output->pending_commit_damage,
+			&scene_output->pending_commit_damage, &frame_damage);
+		pixman_region32_intersect_rect(&scene_output->pending_commit_damage,
+			&scene_output->pending_commit_damage, 0, 0, output->width, output->height);
+		pixman_region32_fini(&frame_damage);
 	}
 }
 
@@ -1653,14 +1674,6 @@ static bool construct_render_list_iterator(struct wlr_scene_node *node,
 static void output_state_apply_damage(const struct render_data *data,
 		struct wlr_output_state *state) {
 	struct wlr_scene_output *output = data->output;
-
-	pixman_region32_t frame_damage;
-	pixman_region32_init(&frame_damage);
-	pixman_region32_copy(&frame_damage, &output->damage_ring.current);
-	transform_output_damage(&frame_damage, data);
-	pixman_region32_union(&output->pending_commit_damage,
-		&output->pending_commit_damage, &frame_damage);
-	pixman_region32_fini(&frame_damage);
 
 	wlr_output_state_set_damage(state, &output->pending_commit_damage);
 }
