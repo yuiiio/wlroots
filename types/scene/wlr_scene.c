@@ -533,6 +533,25 @@ static void restack_xwayland_surface(struct wlr_scene_node *node,
 
 	data->restack_above = xwayland_surface;
 }
+
+static void restack_xwayland_surface_below(struct wlr_scene_node *node) {
+	if (node->type == WLR_SCENE_NODE_TREE) {
+		struct wlr_scene_tree *scene_tree = wlr_scene_tree_from_node(node);
+		struct wlr_scene_node *child;
+		wl_list_for_each(child, &scene_tree->children, link) {
+			restack_xwayland_surface_below(child);
+		}
+		return;
+	}
+
+	struct wlr_xwayland_surface *xwayland_surface =
+		scene_node_try_get_managed_xwayland_surface(node);
+	if (!xwayland_surface) {
+		return;
+	}
+
+	wlr_xwayland_surface_restack(xwayland_surface, NULL, XCB_STACK_MODE_BELOW);
+}
 #endif
 
 static bool scene_node_update_iterator(struct wlr_scene_node *node,
@@ -633,6 +652,9 @@ static void scene_node_update(struct wlr_scene_node *node,
 
 	int x, y;
 	if (!wlr_scene_node_coords(node, &x, &y)) {
+#if WLR_HAS_XWAYLAND
+		restack_xwayland_surface_below(node);
+#endif
 		if (damage) {
 			scene_update_region(scene, damage);
 			scene_damage_outputs(scene, damage);
