@@ -36,7 +36,7 @@ static void send_button_event(struct wlr_x11_output *output, uint32_t key,
 		.button = key,
 		.state = st,
 	};
-	wl_signal_emit_mutable(&output->pointer.events.button, &ev);
+	wlr_pointer_notify_button(&output->pointer, &ev);
 	wl_signal_emit_mutable(&output->pointer.events.frame, &output->pointer);
 }
 

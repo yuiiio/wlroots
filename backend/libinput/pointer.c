@@ -69,7 +69,7 @@ void handle_pointer_button(struct libinput_event *event,
 		wlr_event.state = WL_POINTER_BUTTON_STATE_RELEASED;
 		break;
 	}
-	wl_signal_emit_mutable(&pointer->events.button, &wlr_event);
+	wlr_pointer_notify_button(pointer, &wlr_event);
 	wl_signal_emit_mutable(&pointer->events.frame, pointer);
 }
 

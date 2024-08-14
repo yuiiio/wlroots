@@ -73,7 +73,7 @@ static void virtual_pointer_button(struct wl_client *client,
 		.button = button,
 		.state = state ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED,
 	};
-	wl_signal_emit_mutable(&pointer->pointer.events.button, &event);
+	wlr_pointer_notify_button(&pointer->pointer, &event);
 }
 
 static void virtual_pointer_axis(struct wl_client *client,

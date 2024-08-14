@@ -19,4 +19,7 @@ void wlr_pointer_init(struct wlr_pointer *pointer,
 		const struct wlr_pointer_impl *impl, const char *name);
 void wlr_pointer_finish(struct wlr_pointer *pointer);
 
+void wlr_pointer_notify_button(struct wlr_pointer *pointer,
+		struct wlr_pointer_button_event *event);
+
 #endif

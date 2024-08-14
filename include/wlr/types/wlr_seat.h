@@ -170,8 +170,6 @@ struct wlr_seat_pointer_grab {
 	void *data;
 };
 
-#define WLR_POINTER_BUTTONS_CAP 16
-
 struct wlr_seat_pointer_button {
 	uint32_t button;
 	size_t n_pressed;

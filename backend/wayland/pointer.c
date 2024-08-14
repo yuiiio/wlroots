@@ -112,7 +112,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
 		.state = state,
 		.time_msec = time,
 	};
-	wl_signal_emit_mutable(&pointer->wlr_pointer.events.button, &event);
+	wlr_pointer_notify_button(&pointer->wlr_pointer, &event);
 }
 
 static void pointer_handle_axis(void *data, struct wl_pointer *wl_pointer,

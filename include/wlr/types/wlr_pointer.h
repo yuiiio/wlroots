@@ -14,6 +14,8 @@
 #include <wayland-server-protocol.h>
 #include <wlr/types/wlr_input_device.h>
 
+#define WLR_POINTER_BUTTONS_CAP 16
+
 struct wlr_pointer_impl;
 
 struct wlr_pointer {
@@ -22,6 +24,9 @@ struct wlr_pointer {
 	const struct wlr_pointer_impl *impl;
 
 	char *output_name;
+
+	uint32_t buttons[WLR_POINTER_BUTTONS_CAP];
+	size_t button_count;
 
 	struct {
 		struct wl_signal motion; // struct wlr_pointer_motion_event
