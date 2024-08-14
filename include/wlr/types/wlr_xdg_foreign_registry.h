@@ -33,7 +33,7 @@ struct wlr_xdg_foreign_exported {
 	struct wl_list link; // wlr_xdg_foreign_registry.exported_surfaces
 	struct wlr_xdg_foreign_registry *registry;
 
-	struct wlr_surface *surface;
+	struct wlr_xdg_toplevel *toplevel;
 
 	char handle[WLR_XDG_FOREIGN_HANDLE_SIZE];
 

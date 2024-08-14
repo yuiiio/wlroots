@@ -50,7 +50,7 @@ struct wlr_xdg_imported_v2 {
 
 struct wlr_xdg_imported_child_v2 {
 	struct wlr_xdg_imported_v2 *imported;
-	struct wlr_surface *surface;
+	struct wlr_xdg_toplevel *toplevel;
 
 	struct wl_list link; // wlr_xdg_imported_v2.children
 
