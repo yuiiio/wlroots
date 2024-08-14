@@ -828,6 +828,11 @@ void wlr_surface_map(struct wlr_surface *surface) {
 		subsurface_consider_map(subsurface);
 	}
 
+	if (surface->role != NULL && surface->role->map != NULL &&
+			(surface->role_resource != NULL || surface->role->no_object)) {
+		surface->role->map(surface);
+	}
+
 	wl_signal_emit_mutable(&surface->events.map, NULL);
 }
 
