@@ -179,9 +179,6 @@ void wlr_seat_pointer_enter(struct wlr_seat *wlr_seat,
 		seat_client_send_pointer_leave_raw(focused_client, focused_surface);
 	}
 
-	// The current surface doesn't know about pressed buttons
-	wlr_seat->pointer_state.button_count = 0;
-
 	// enter the current surface
 	if (client != NULL && surface != NULL) {
 		uint32_t serial = wlr_seat_client_next_serial(client);
@@ -433,18 +430,36 @@ void wlr_seat_pointer_end_grab(struct wlr_seat *wlr_seat) {
 	}
 }
 
+// Switching focus means the new surface doesn't know about the currently
+// pressed buttons. This function allows to reset them.
+static void reset_buttons(struct wlr_seat *wlr_seat) {
+	wlr_seat->pointer_state.button_count = 0;
+}
+
 void wlr_seat_pointer_notify_enter(struct wlr_seat *wlr_seat,
 		struct wlr_surface *surface, double sx, double sy) {
 	// NULL surfaces are prohibited in the grab-compatible API. Use
 	// wlr_seat_pointer_notify_clear_focus() instead.
 	assert(surface);
 	struct wlr_seat_pointer_grab *grab = wlr_seat->pointer_state.grab;
+	struct wlr_surface *focused_surface = wlr_seat->pointer_state.focused_surface;
+
 	grab->interface->enter(grab, surface, sx, sy);
+
+	if (focused_surface != wlr_seat->pointer_state.focused_surface) {
+		reset_buttons(wlr_seat);
+	}
 }
 
 void wlr_seat_pointer_notify_clear_focus(struct wlr_seat *wlr_seat) {
 	struct wlr_seat_pointer_grab *grab = wlr_seat->pointer_state.grab;
+	struct wlr_surface *focused_surface = wlr_seat->pointer_state.focused_surface;
+
 	grab->interface->clear_focus(grab);
+
+	if (focused_surface != wlr_seat->pointer_state.focused_surface) {
+		reset_buttons(wlr_seat);
+	}
 }
 
 void wlr_seat_pointer_notify_motion(struct wlr_seat *wlr_seat, uint32_t time,
