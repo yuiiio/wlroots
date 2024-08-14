@@ -7,6 +7,7 @@
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_damage_ring.h>
+#include <wlr/types/wlr_gamma_control_v1.h>
 #include <wlr/types/wlr_linux_dmabuf_v1.h>
 #include <wlr/types/wlr_presentation_time.h>
 #include <wlr/types/wlr_scene.h>
@@ -136,6 +137,8 @@ void wlr_scene_node_destroy(struct wlr_scene_node *node) {
 			}
 
 			wl_list_remove(&scene->linux_dmabuf_v1_destroy.link);
+			wl_list_remove(&scene->gamma_control_manager_v1_destroy.link);
+			wl_list_remove(&scene->gamma_control_manager_v1_set_gamma.link);
 		} else {
 			assert(node->parent);
 		}
@@ -169,6 +172,8 @@ struct wlr_scene *wlr_scene_create(void) {
 
 	wl_list_init(&scene->outputs);
 	wl_list_init(&scene->linux_dmabuf_v1_destroy.link);
+	wl_list_init(&scene->gamma_control_manager_v1_destroy.link);
+	wl_list_init(&scene->gamma_control_manager_v1_set_gamma.link);
 
 	const char *debug_damage_options[] = {
 		"none",
@@ -1429,6 +1434,52 @@ void wlr_scene_set_linux_dmabuf_v1(struct wlr_scene *scene,
 	wl_signal_add(&linux_dmabuf_v1->events.destroy, &scene->linux_dmabuf_v1_destroy);
 }
 
+static void scene_handle_gamma_control_manager_v1_set_gamma(struct wl_listener *listener,
+		void *data) {
+	const struct wlr_gamma_control_manager_v1_set_gamma_event *event = data;
+	struct wlr_scene *scene =
+		wl_container_of(listener, scene, gamma_control_manager_v1_set_gamma);
+	struct wlr_scene_output *output = wlr_scene_get_scene_output(scene, event->output);
+	if (!output) {
+		// this scene might not own this output.
+		return;
+	}
+
+	output->gamma_lut_changed = true;
+	output->gamma_lut = event->control;
+	wlr_output_schedule_frame(output->output);
+}
+
+static void scene_handle_gamma_control_manager_v1_destroy(struct wl_listener *listener,
+		void *data) {
+	struct wlr_scene *scene =
+		wl_container_of(listener, scene, gamma_control_manager_v1_destroy);
+	wl_list_remove(&scene->gamma_control_manager_v1_destroy.link);
+	wl_list_init(&scene->gamma_control_manager_v1_destroy.link);
+	wl_list_remove(&scene->gamma_control_manager_v1_set_gamma.link);
+	wl_list_init(&scene->gamma_control_manager_v1_set_gamma.link);
+	scene->gamma_control_manager_v1 = NULL;
+
+	struct wlr_scene_output *output;
+	wl_list_for_each(output, &scene->outputs, link) {
+		output->gamma_lut_changed = false;
+		output->gamma_lut = NULL;
+	}
+}
+
+void wlr_scene_set_gamma_control_manager_v1(struct wlr_scene *scene,
+	    struct wlr_gamma_control_manager_v1 *gamma_control) {
+	assert(scene->gamma_control_manager_v1 == NULL);
+	scene->gamma_control_manager_v1 = gamma_control;
+
+	scene->gamma_control_manager_v1_destroy.notify =
+		scene_handle_gamma_control_manager_v1_destroy;
+	wl_signal_add(&gamma_control->events.destroy, &scene->gamma_control_manager_v1_destroy);
+	scene->gamma_control_manager_v1_set_gamma.notify =
+		scene_handle_gamma_control_manager_v1_set_gamma;
+	wl_signal_add(&gamma_control->events.set_gamma, &scene->gamma_control_manager_v1_set_gamma);
+}
+
 static void scene_output_handle_destroy(struct wlr_addon *addon) {
 	struct wlr_scene_output *scene_output =
 		wl_container_of(addon, scene_output, addon);
@@ -1495,6 +1546,13 @@ static void scene_output_handle_commit(struct wl_listener *listener, void *data)
 	if (scene_output->scene->debug_damage_option == WLR_SCENE_DEBUG_DAMAGE_HIGHLIGHT &&
 			!wl_list_empty(&scene_output->damage_highlight_regions)) {
 		wlr_output_schedule_frame(scene_output->output);
+	}
+
+	// Next time the output is enabled, try to re-apply the gamma LUT
+	if (scene_output->scene->gamma_control_manager_v1 &&
+			(state->committed & WLR_OUTPUT_STATE_ENABLED) &&
+			!scene_output->output->enabled) {
+		scene_output->gamma_lut_changed = true;
 	}
 }
 
@@ -1820,7 +1878,7 @@ static bool scene_entry_try_direct_scanout(struct render_list_entry *entry,
 
 bool wlr_scene_output_needs_frame(struct wlr_scene_output *scene_output) {
 	return scene_output->output->needs_frame || pixman_region32_not_empty(
-		&scene_output->pending_commit_damage);
+		&scene_output->pending_commit_damage) || scene_output->gamma_lut_changed;
 }
 
 bool wlr_scene_output_commit(struct wlr_scene_output *scene_output,
@@ -1844,6 +1902,35 @@ bool wlr_scene_output_commit(struct wlr_scene_output *scene_output,
 out:
 	wlr_output_state_finish(&state);
 	return ok;
+}
+
+static void scene_output_state_attempt_gamma(struct wlr_scene_output *scene_output,
+		struct wlr_output_state *state) {
+	if (!scene_output->gamma_lut_changed) {
+		return;
+	}
+
+	struct wlr_output_state gamma_pending = {0};
+	if (!wlr_output_state_copy(&gamma_pending, state)) {
+		return;
+	}
+
+	if (!wlr_gamma_control_v1_apply(scene_output->gamma_lut, &gamma_pending)) {
+		wlr_output_state_finish(&gamma_pending);
+		return;
+	}
+
+	scene_output->gamma_lut_changed = false;
+	if (!wlr_output_test_state(scene_output->output, &gamma_pending)) {
+		wlr_gamma_control_v1_send_failed_and_destroy(scene_output->gamma_lut);
+
+		scene_output->gamma_lut = NULL;
+		wlr_output_state_finish(&gamma_pending);
+		return;
+	}
+
+	wlr_output_state_copy(state, &gamma_pending);
+	wlr_output_state_finish(&gamma_pending);
 }
 
 bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
@@ -1982,6 +2069,8 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 	}
 
 	if (scanout) {
+		scene_output_state_attempt_gamma(scene_output, state);
+
 		if (timer) {
 			struct timespec end_time, duration;
 			clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -2140,6 +2229,8 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 		wlr_output_state_set_wait_timeline(state, scene_output->in_timeline,
 			scene_output->in_point);
 	}
+
+	scene_output_state_attempt_gamma(scene_output, state);
 
 	return true;
 }
