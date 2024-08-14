@@ -1818,10 +1818,14 @@ static bool scene_entry_try_direct_scanout(struct render_list_entry *entry,
 	return true;
 }
 
+bool wlr_scene_output_needs_frame(struct wlr_scene_output *scene_output) {
+	return scene_output->output->needs_frame || pixman_region32_not_empty(
+		&scene_output->pending_commit_damage);
+}
+
 bool wlr_scene_output_commit(struct wlr_scene_output *scene_output,
 		const struct wlr_scene_output_state_options *options) {
-	if (!scene_output->output->needs_frame && !pixman_region32_not_empty(
-			&scene_output->pending_commit_damage)) {
+	if (!wlr_scene_output_needs_frame(scene_output)) {
 		return true;
 	}
 
