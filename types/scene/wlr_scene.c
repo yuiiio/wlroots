@@ -492,21 +492,32 @@ static void update_node_update_outputs(struct wlr_scene_node *node,
 }
 
 #if WLR_HAS_XWAYLAND
-static void restack_xwayland_surface(struct wlr_scene_node *node,
-		struct wlr_box *box, struct scene_update_data *data) {
+static struct wlr_xwayland_surface *scene_node_try_get_managed_xwayland_surface(
+		struct wlr_scene_node *node) {
 	if (node->type != WLR_SCENE_NODE_BUFFER) {
-		return;
+		return NULL;
 	}
 
 	struct wlr_scene_buffer *buffer_node = wlr_scene_buffer_from_node(node);
 	struct wlr_scene_surface *surface_node = wlr_scene_surface_try_from_buffer(buffer_node);
 	if (!surface_node) {
-		return;
+		return NULL;
 	}
 
 	struct wlr_xwayland_surface *xwayland_surface =
 		wlr_xwayland_surface_try_from_wlr_surface(surface_node->surface);
 	if (!xwayland_surface || xwayland_surface->override_redirect) {
+		return NULL;
+	}
+
+	return xwayland_surface;
+}
+
+static void restack_xwayland_surface(struct wlr_scene_node *node,
+		struct wlr_box *box, struct scene_update_data *data) {
+	struct wlr_xwayland_surface *xwayland_surface =
+		scene_node_try_get_managed_xwayland_surface(node);
+	if (!xwayland_surface) {
 		return;
 	}
 
