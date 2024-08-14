@@ -361,15 +361,6 @@ static const struct wlr_surface_synced_impl surface_synced_impl = {
 	.state_size = sizeof(struct wlr_xdg_popup_state),
 };
 
-static void xdg_popup_handle_resource_destroy(struct wl_resource *resource) {
-	struct wlr_xdg_popup *popup =
-		wlr_xdg_popup_from_resource(resource);
-	if (popup == NULL) {
-		return;
-	}
-	wlr_xdg_popup_destroy(popup);
-}
-
 void create_xdg_popup(struct wlr_xdg_surface *surface, struct wlr_xdg_surface *parent,
 		struct wlr_xdg_positioner *positioner, uint32_t id) {
 	if (!wlr_xdg_positioner_is_complete(positioner)) {
@@ -409,8 +400,7 @@ void create_xdg_popup(struct wlr_xdg_surface *surface, struct wlr_xdg_surface *p
 		goto error_synced;
 	}
 	wl_resource_set_implementation(surface->popup->resource,
-		&xdg_popup_implementation, surface->popup,
-		xdg_popup_handle_resource_destroy);
+		&xdg_popup_implementation, surface->popup, NULL);
 
 	surface->role = WLR_XDG_SURFACE_ROLE_POPUP;
 
