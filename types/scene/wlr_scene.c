@@ -2066,11 +2066,18 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 			int64_t time_diff_ms = timespec_to_msec(&time_diff);
 			float alpha = 1.0 - (double)time_diff_ms / HIGHLIGHT_DAMAGE_FADEOUT_TIME;
 
+			pixman_region32_t clip;
+			pixman_region32_init(&clip);
+			pixman_region32_copy(&clip, &damage->region);
+			transform_output_damage(&clip, &render_data);
+
 			wlr_render_pass_add_rect(render_pass, &(struct wlr_render_rect_options){
 				.box = { .width = buffer->width, .height = buffer->height },
 				.color = { .r = alpha * 0.5, .g = 0, .b = 0, .a = alpha * 0.5 },
-				.clip = &damage->region,
+				.clip = &clip,
 			});
+
+			pixman_region32_fini(&clip);
 		}
 	}
 
