@@ -178,7 +178,9 @@ static void linux_dmabuf_feedback_v1_handle_main_device(void *data,
 			"falling back to primary node", name);
 	}
 
-	feedback_data->backend->drm_render_name = strdup(name);
+	struct wlr_wl_backend *wl = feedback_data->backend;
+	assert(wl->drm_render_name == NULL);
+	wl->drm_render_name = strdup(name);
 
 	drmFreeDevice(&device);
 }
@@ -305,6 +307,7 @@ static char *get_render_name(const char *name) {
 static void legacy_drm_handle_device(void *data, struct wl_drm *drm,
 		const char *name) {
 	struct wlr_wl_backend *wl = data;
+	assert(wl->drm_render_name == NULL);
 	wl->drm_render_name = get_render_name(name);
 }
 
@@ -621,6 +624,8 @@ struct wlr_backend *wlr_wl_backend_create(struct wl_event_loop *loop,
 		goto error_registry;
 	}
 
+	wl_display_roundtrip(wl->remote_display); // process initial event bursts
+
 	struct zwp_linux_dmabuf_feedback_v1 *linux_dmabuf_feedback_v1 = NULL;
 	struct wlr_wl_linux_dmabuf_feedback_v1 feedback_data = { .backend = wl };
 	if (wl->zwp_linux_dmabuf_v1 != NULL &&
@@ -638,15 +643,17 @@ struct wlr_backend *wlr_wl_backend_create(struct wl_event_loop *loop,
 		if (wl->legacy_drm != NULL) {
 			wl_drm_destroy(wl->legacy_drm);
 			wl->legacy_drm = NULL;
+
+			free(wl->drm_render_name);
+			wl->drm_render_name = NULL;
 		}
-	}
 
-	wl_display_roundtrip(wl->remote_display); // get linux-dmabuf formats
+		wl_display_roundtrip(wl->remote_display); // get linux-dmabuf feedback events
 
-	if (feedback_data.format_table != NULL) {
-		munmap(feedback_data.format_table, feedback_data.format_table_size);
-	}
-	if (linux_dmabuf_feedback_v1 != NULL) {
+		if (feedback_data.format_table != NULL) {
+			munmap(feedback_data.format_table, feedback_data.format_table_size);
+		}
+
 		zwp_linux_dmabuf_feedback_v1_destroy(linux_dmabuf_feedback_v1);
 	}
 
