@@ -424,6 +424,8 @@ static bool check_syncobj_eventfd(int drm_fd) {
 
 struct wlr_linux_drm_syncobj_manager_v1 *wlr_linux_drm_syncobj_manager_v1_create(
 		struct wl_display *display, uint32_t version, int drm_fd) {
+	assert(version <= LINUX_DRM_SYNCOBJ_V1_VERSION);
+
 	if (!check_syncobj_eventfd(drm_fd)) {
 		wlr_log(WLR_INFO, "DRM syncobj eventfd unavailable, disabling linux-drm-syncobj-v1");
 		return NULL;
@@ -441,7 +443,7 @@ struct wlr_linux_drm_syncobj_manager_v1 *wlr_linux_drm_syncobj_manager_v1_create
 
 	manager->global = wl_global_create(display,
 		&wp_linux_drm_syncobj_manager_v1_interface,
-		LINUX_DRM_SYNCOBJ_V1_VERSION, manager, manager_bind);
+		version, manager, manager_bind);
 	if (manager->global == NULL) {
 		goto error_drm_fd;
 	}
