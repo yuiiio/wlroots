@@ -12,6 +12,9 @@
 #include <wayland-server-core.h>
 #include <wlr/util/addon.h>
 
+struct wlr_buffer;
+struct wlr_surface;
+
 struct wlr_linux_drm_syncobj_surface_v1_state {
 	struct wlr_drm_syncobj_timeline *acquire_timeline;
 	uint64_t acquire_point;
