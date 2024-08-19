@@ -96,6 +96,7 @@ static struct wlr_gbm_buffer *create_buffer(struct wlr_gbm_allocator *alloc,
 
 	bool has_modifier = true;
 	uint64_t fallback_modifier = DRM_FORMAT_MOD_INVALID;
+	errno = 0;
 	struct gbm_bo *bo = gbm_bo_create_with_modifiers(gbm_device, width, height,
 		format->format, format->modifiers, format->len);
 	if (bo == NULL) {
@@ -109,6 +110,7 @@ static struct wlr_gbm_buffer *create_buffer(struct wlr_gbm_allocator *alloc,
 			wlr_log_errno(WLR_ERROR, "gbm_bo_create_with_modifiers failed");
 			return NULL;
 		}
+		errno = 0;
 		bo = gbm_bo_create(gbm_device, width, height, format->format, usage);
 		has_modifier = false;
 	}
