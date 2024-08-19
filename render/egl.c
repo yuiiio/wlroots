@@ -476,6 +476,7 @@ static EGLDeviceEXT get_egl_device_from_drm_fd(struct wlr_egl *egl,
 
 	if (!egl->procs.eglQueryDevicesEXT(nb_devices, devices, &nb_devices)) {
 		wlr_log(WLR_ERROR, "Failed to query EGL devices");
+		free(devices);
 		return EGL_NO_DEVICE_EXT;
 	}
 
@@ -483,6 +484,7 @@ static EGLDeviceEXT get_egl_device_from_drm_fd(struct wlr_egl *egl,
 	int ret = drmGetDevice(drm_fd, &device);
 	if (ret < 0) {
 		wlr_log(WLR_ERROR, "Failed to get DRM device: %s", strerror(-ret));
+		free(devices);
 		return EGL_NO_DEVICE_EXT;
 	}
 
