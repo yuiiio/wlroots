@@ -106,14 +106,14 @@ static struct wlr_gbm_buffer *create_buffer(struct wlr_gbm_allocator *alloc,
 			fallback_modifier = DRM_FORMAT_MOD_LINEAR;
 		} else if (!wlr_drm_format_has(format, DRM_FORMAT_MOD_INVALID)) {
 			// If the format doesn't accept an implicit modifier, bail out.
-			wlr_log(WLR_ERROR, "gbm_bo_create_with_modifiers failed");
+			wlr_log_errno(WLR_ERROR, "gbm_bo_create_with_modifiers failed");
 			return NULL;
 		}
 		bo = gbm_bo_create(gbm_device, width, height, format->format, usage);
 		has_modifier = false;
 	}
 	if (bo == NULL) {
-		wlr_log(WLR_ERROR, "gbm_bo_create failed");
+		wlr_log_errno(WLR_ERROR, "gbm_bo_create failed");
 		return NULL;
 	}
 
