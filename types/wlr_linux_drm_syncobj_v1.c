@@ -485,6 +485,7 @@ static void release_signaller_handle_buffer_release(struct wl_listener *listener
 	}
 
 	wlr_drm_syncobj_timeline_unref(signaller->timeline);
+	wl_list_remove(&signaller->buffer_release.link);
 	free(signaller);
 }
 
