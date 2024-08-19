@@ -2018,6 +2018,12 @@ static void handle_page_flip(int fd, unsigned seq,
 	if (conn != NULL) {
 		conn->pending_page_flip = NULL;
 	}
+
+	uint32_t present_flags = WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION;
+	if (!page_flip->async) {
+		present_flags |= WLR_OUTPUT_PRESENT_VSYNC;
+	}
+
 	if (page_flip->connectors_len == 0) {
 		drm_page_flip_destroy(page_flip);
 	}
@@ -2048,10 +2054,6 @@ static void handle_page_flip(int fd, unsigned seq,
 		drm_fb_move(&layer->current_fb, &layer->queued_fb);
 	}
 
-	uint32_t present_flags = WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION;
-	if (!page_flip->async) {
-		present_flags |= WLR_OUTPUT_PRESENT_VSYNC;
-	}
 	/* Don't report ZERO_COPY in multi-gpu situations, because we had to copy
 	 * data between the GPUs, even if we were using the direct scanout
 	 * interface.
