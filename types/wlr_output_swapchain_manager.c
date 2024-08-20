@@ -143,7 +143,7 @@ static bool manager_output_prepare(struct wlr_output_swapchain_manager_output *m
 		return false;
 	}
 
-	struct wlr_buffer *buffer = wlr_swapchain_acquire(swapchain, NULL);
+	struct wlr_buffer *buffer = wlr_swapchain_acquire(swapchain);
 	if (buffer == NULL) {
 		return false;
 	}

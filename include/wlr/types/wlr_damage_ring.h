@@ -15,9 +15,6 @@
 #include <pixman.h>
 #include <wayland-server-core.h>
 
-/* For triple buffering, a history of two frames is required. */
-#define WLR_DAMAGE_RING_PREVIOUS_LEN 2
-
 struct wlr_box;
 
 struct wlr_damage_ring_buffer {
@@ -36,9 +33,6 @@ struct wlr_damage_ring {
 	pixman_region32_t current;
 
 	// private state
-
-	pixman_region32_t previous[WLR_DAMAGE_RING_PREVIOUS_LEN];
-	size_t previous_idx;
 
 	struct wl_list buffers; // wlr_damage_ring_buffer.link
 };
@@ -78,20 +72,6 @@ bool wlr_damage_ring_add_box(struct wlr_damage_ring *ring,
  * Damage the ring fully.
  */
 void wlr_damage_ring_add_whole(struct wlr_damage_ring *ring);
-
-/**
- * Rotate the damage ring. This needs to be called after using the accumulated
- * damage, e.g. after rendering to an output's back buffer.
- */
-void wlr_damage_ring_rotate(struct wlr_damage_ring *ring);
-
-/**
- * Get accumulated damage, which is the difference between the current buffer
- * and the buffer with age of buffer_age; in context of rendering, this is
- * the region that needs to be redrawn.
- */
-void wlr_damage_ring_get_buffer_damage(struct wlr_damage_ring *ring,
-	int buffer_age, pixman_region32_t *damage);
 
 /**
  * Get accumulated buffer damage and rotate the damage ring.

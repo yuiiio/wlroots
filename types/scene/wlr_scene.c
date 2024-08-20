@@ -2089,7 +2089,7 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 		swapchain = output->swapchain;
 	}
 
-	struct wlr_buffer *buffer = wlr_swapchain_acquire(swapchain, NULL);
+	struct wlr_buffer *buffer = wlr_swapchain_acquire(swapchain);
 	if (buffer == NULL) {
 		return false;
 	}

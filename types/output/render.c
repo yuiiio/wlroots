@@ -55,7 +55,7 @@ static struct wlr_buffer *output_acquire_empty_buffer(struct wlr_output *output,
 		return NULL;
 	}
 
-	struct wlr_buffer *buffer = wlr_swapchain_acquire(output->swapchain, NULL);
+	struct wlr_buffer *buffer = wlr_swapchain_acquire(output->swapchain);
 	if (buffer == NULL) {
 		return NULL;
 	}
@@ -204,7 +204,7 @@ struct wlr_render_pass *wlr_output_begin_render_pass(struct wlr_output *output,
 		return NULL;
 	}
 
-	struct wlr_buffer *buffer = wlr_swapchain_acquire(output->swapchain, NULL);
+	struct wlr_buffer *buffer = wlr_swapchain_acquire(output->swapchain);
 	if (buffer == NULL) {
 		return NULL;
 	}
