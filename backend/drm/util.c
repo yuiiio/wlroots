@@ -170,12 +170,6 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 			has_best = true;
 		}
 	}
-	if (st->orig[i] == UNMATCHED) {
-		st->res[i] = UNMATCHED;
-		if (match_obj_(st, skips, score, replaced, i + 1)) {
-			has_best = true;
-		}
-	}
 	if (st->exit_early) {
 		return true;
 	}
@@ -211,13 +205,13 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 		}
 	}
 
-	if (has_best) {
-		return true;
-	}
-
 	// Maybe this resource can't be matched
 	st->res[i] = UNMATCHED;
-	return match_obj_(st, skips, score, replaced, i + 1);
+	if (match_obj_(st, skips, score, replaced, i + 1)) {
+		has_best = true;
+	}
+
+	return has_best;
 }
 
 size_t match_obj(size_t num_objs, const uint32_t objs[static restrict num_objs],
