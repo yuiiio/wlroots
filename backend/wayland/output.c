@@ -94,14 +94,13 @@ static void presentation_feedback_handle_presented(void *data,
 		uint32_t seq_hi, uint32_t seq_lo, uint32_t flags) {
 	struct wlr_wl_presentation_feedback *feedback = data;
 
-	struct timespec t = {
-		.tv_sec = ((uint64_t)tv_sec_hi << 32) | tv_sec_lo,
-		.tv_nsec = tv_nsec,
-	};
 	struct wlr_output_event_present event = {
 		.commit_seq = feedback->commit_seq,
 		.presented = true,
-		.when = &t,
+		.when = {
+			.tv_sec = ((uint64_t)tv_sec_hi << 32) | tv_sec_lo,
+			.tv_nsec = tv_nsec,
+		},
 		.seq = ((uint64_t)seq_hi << 32) | seq_lo,
 		.refresh = refresh_ns,
 		.flags = flags,
