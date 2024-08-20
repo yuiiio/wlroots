@@ -1520,16 +1520,6 @@ static void scene_output_handle_commit(struct wl_listener *listener, void *data)
 	struct wlr_output_event_commit *event = data;
 	const struct wlr_output_state *state = event->state;
 
-	bool force_update = state->committed & (
-		WLR_OUTPUT_STATE_TRANSFORM |
-		WLR_OUTPUT_STATE_SCALE |
-		WLR_OUTPUT_STATE_SUBPIXEL);
-
-	if (force_update || state->committed & (WLR_OUTPUT_STATE_MODE |
-			WLR_OUTPUT_STATE_ENABLED)) {
-		scene_output_update_geometry(scene_output, force_update);
-	}
-
 	// if the output has been committed with a certain damage, we know that region
 	// will be acknowledged by the backend so we don't need to keep track of it
 	// anymore
@@ -1541,6 +1531,16 @@ static void scene_output_handle_commit(struct wl_listener *listener, void *data)
 			pixman_region32_fini(&scene_output->pending_commit_damage);
 			pixman_region32_init(&scene_output->pending_commit_damage);
 		}
+	}
+
+	bool force_update = state->committed & (
+		WLR_OUTPUT_STATE_TRANSFORM |
+		WLR_OUTPUT_STATE_SCALE |
+		WLR_OUTPUT_STATE_SUBPIXEL);
+
+	if (force_update || state->committed & (WLR_OUTPUT_STATE_MODE |
+			WLR_OUTPUT_STATE_ENABLED)) {
+		scene_output_update_geometry(scene_output, force_update);
 	}
 
 	if (scene_output->scene->debug_damage_option == WLR_SCENE_DEBUG_DAMAGE_HIGHLIGHT &&
