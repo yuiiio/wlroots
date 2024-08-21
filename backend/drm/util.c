@@ -127,16 +127,16 @@ struct match_state {
  * skips: The number of SKIP elements encountered so far.
  * score: The number of resources we've matched so far.
  * replaced: The number of changes from the original solution.
- * i: The index of the current CRTC.
+ * crtc_index: The index of the current CRTC.
  *
  * This tries to match a solution as close to st->orig as it can.
  *
  * Returns whether we've set a new best element with this solution.
  */
 static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
-		size_t score, size_t replaced, size_t i) {
+		size_t score, size_t replaced, size_t crtc_index) {
 	// Finished
-	if (i >= st->num_crtcs) {
+	if (crtc_index >= st->num_crtcs) {
 		if (score > st->score ||
 				(score == st->score && replaced < st->replaced)) {
 			st->score = score;
@@ -153,9 +153,9 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 		}
 	}
 
-	if (st->orig[i] == SKIP) {
-		st->res[i] = SKIP;
-		return match_connectors_with_crtcs_(st, skips + 1, score, replaced, i + 1);
+	if (st->orig[crtc_index] == SKIP) {
+		st->res[crtc_index] = SKIP;
+		return match_connectors_with_crtcs_(st, skips + 1, score, replaced, crtc_index + 1);
 	}
 
 	bool has_best = false;
@@ -164,10 +164,10 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 	 * Attempt to use the current solution first, to try and avoid
 	 * recalculating everything
 	 */
-	if (st->orig[i] != UNMATCHED && !is_taken(i, st->res, st->orig[i])) {
-		st->res[i] = st->orig[i];
-		size_t crtc_score = st->conns[st->res[i]] != 0 ? 1 : 0;
-		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, i + 1)) {
+	if (st->orig[crtc_index] != UNMATCHED && !is_taken(crtc_index, st->res, st->orig[crtc_index])) {
+		st->res[crtc_index] = st->orig[crtc_index];
+		size_t crtc_score = st->conns[st->res[crtc_index]] != 0 ? 1 : 0;
+		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, crtc_index + 1)) {
 			has_best = true;
 		}
 	}
@@ -175,29 +175,29 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 		return true;
 	}
 
-	if (st->orig[i] != UNMATCHED) {
+	if (st->orig[crtc_index] != UNMATCHED) {
 		++replaced;
 	}
 
 	for (size_t candidate = 0; candidate < st->num_conns; ++candidate) {
 		// We tried this earlier
-		if (candidate == st->orig[i]) {
+		if (candidate == st->orig[crtc_index]) {
 			continue;
 		}
 
 		// Not compatible
-		if (!(st->conns[candidate] & (1 << i))) {
+		if (!(st->conns[candidate] & (1 << crtc_index))) {
 			continue;
 		}
 
 		// Already taken
-		if (is_taken(i, st->res, candidate)) {
+		if (is_taken(crtc_index, st->res, candidate)) {
 			continue;
 		}
 
-		st->res[i] = candidate;
+		st->res[crtc_index] = candidate;
 		size_t crtc_score = st->conns[candidate] != 0 ? 1 : 0;
-		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, i + 1)) {
+		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, crtc_index + 1)) {
 			has_best = true;
 		}
 
@@ -207,8 +207,8 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 	}
 
 	// Maybe this CRTC can't be matched
-	st->res[i] = UNMATCHED;
-	if (match_connectors_with_crtcs_(st, skips, score, replaced, i + 1)) {
+	st->res[crtc_index] = UNMATCHED;
+	if (match_connectors_with_crtcs_(st, skips, score, replaced, crtc_index + 1)) {
 		has_best = true;
 	}
 
