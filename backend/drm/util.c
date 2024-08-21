@@ -133,7 +133,7 @@ struct match_state {
  *
  * Returns whether we've set a new best element with this solution.
  */
-static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
+static bool match_connectors_with_crtcs_(struct match_state *st,
 		size_t score, size_t replaced, size_t crtc_index) {
 	// Finished
 	if (crtc_index >= st->num_crtcs) {
@@ -143,7 +143,7 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 			st->replaced = replaced;
 			memcpy(st->best, st->res, sizeof(st->best[0]) * st->num_crtcs);
 
-			st->exit_early = (st->score == st->num_crtcs - skips
+			st->exit_early = (st->score == st->num_crtcs
 					|| st->score == st->num_conns)
 					&& st->replaced == 0;
 
@@ -151,11 +151,6 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 		} else {
 			return false;
 		}
-	}
-
-	if (st->orig[crtc_index] == SKIP) {
-		st->res[crtc_index] = SKIP;
-		return match_connectors_with_crtcs_(st, skips + 1, score, replaced, crtc_index + 1);
 	}
 
 	bool has_best = false;
@@ -167,7 +162,7 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 	if (st->orig[crtc_index] != UNMATCHED && !is_taken(crtc_index, st->res, st->orig[crtc_index])) {
 		st->res[crtc_index] = st->orig[crtc_index];
 		size_t crtc_score = st->conns[st->res[crtc_index]] != 0 ? 1 : 0;
-		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, crtc_index + 1)) {
+		if (match_connectors_with_crtcs_(st, score + crtc_score, replaced, crtc_index + 1)) {
 			has_best = true;
 		}
 	}
@@ -197,7 +192,7 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 
 		st->res[crtc_index] = candidate;
 		size_t crtc_score = st->conns[candidate] != 0 ? 1 : 0;
-		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, crtc_index + 1)) {
+		if (match_connectors_with_crtcs_(st, score + crtc_score, replaced, crtc_index + 1)) {
 			has_best = true;
 		}
 
@@ -208,7 +203,7 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 
 	// Maybe this CRTC can't be matched
 	st->res[crtc_index] = UNMATCHED;
-	if (match_connectors_with_crtcs_(st, skips, score, replaced, crtc_index + 1)) {
+	if (match_connectors_with_crtcs_(st, score, replaced, crtc_index + 1)) {
 		has_best = true;
 	}
 
@@ -236,7 +231,7 @@ void match_connectors_with_crtcs(size_t num_conns,
 		.exit_early = false,
 	};
 
-	match_connectors_with_crtcs_(&st, 0, 0, 0, 0);
+	match_connectors_with_crtcs_(&st, 0, 0, 0);
 }
 
 void generate_cvt_mode(drmModeModeInfo *mode, int hdisplay, int vdisplay,

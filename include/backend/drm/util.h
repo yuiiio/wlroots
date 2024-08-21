@@ -19,10 +19,7 @@ void generate_cvt_mode(drmModeModeInfo *mode, int hdisplay, int vdisplay,
 	float vrefresh);
 
 // Part of match_connectors_with_crtcs
-enum {
-	UNMATCHED = (uint32_t)-1,
-	SKIP = (uint32_t)-2,
-};
+#define UNMATCHED ((uint32_t)-1)
 
 /**
  * Tries to match DRM connectors with DRM CRTCs.
