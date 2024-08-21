@@ -1354,7 +1354,7 @@ static void realloc_crtcs(struct wlr_drm_backend *drm,
 		++i;
 	}
 
-	match_obj(num_connectors, connector_constraints,
+	match_connectors_with_crtcs(num_connectors, connector_constraints,
 		drm->num_crtcs, previous_match, new_match);
 
 	// Converts our crtc=>connector result into a connector=>crtc one.

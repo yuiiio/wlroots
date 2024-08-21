@@ -112,9 +112,9 @@ static bool is_taken(size_t n, const uint32_t arr[static n], uint32_t key) {
  * passing 12 arguments to a function.
  */
 struct match_state {
-	const size_t num_objs;
-	const uint32_t *restrict objs;
-	const size_t num_res;
+	const size_t num_conns;
+	const uint32_t *restrict conns;
+	const size_t num_crtcs;
 	size_t score;
 	size_t replaced;
 	uint32_t *restrict res;
@@ -127,23 +127,24 @@ struct match_state {
  * skips: The number of SKIP elements encountered so far.
  * score: The number of resources we've matched so far.
  * replaced: The number of changes from the original solution.
- * i: The index of the current element.
+ * i: The index of the current CRTC.
  *
  * This tries to match a solution as close to st->orig as it can.
  *
  * Returns whether we've set a new best element with this solution.
  */
-static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_t replaced, size_t i) {
+static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
+		size_t score, size_t replaced, size_t i) {
 	// Finished
-	if (i >= st->num_res) {
+	if (i >= st->num_crtcs) {
 		if (score > st->score ||
 				(score == st->score && replaced < st->replaced)) {
 			st->score = score;
 			st->replaced = replaced;
-			memcpy(st->best, st->res, sizeof(st->best[0]) * st->num_res);
+			memcpy(st->best, st->res, sizeof(st->best[0]) * st->num_crtcs);
 
-			st->exit_early = (st->score == st->num_res - skips
-					|| st->score == st->num_objs)
+			st->exit_early = (st->score == st->num_crtcs - skips
+					|| st->score == st->num_conns)
 					&& st->replaced == 0;
 
 			return true;
@@ -154,7 +155,7 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 
 	if (st->orig[i] == SKIP) {
 		st->res[i] = SKIP;
-		return match_obj_(st, skips + 1, score, replaced, i + 1);
+		return match_connectors_with_crtcs_(st, skips + 1, score, replaced, i + 1);
 	}
 
 	bool has_best = false;
@@ -165,8 +166,8 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 	 */
 	if (st->orig[i] != UNMATCHED && !is_taken(i, st->res, st->orig[i])) {
 		st->res[i] = st->orig[i];
-		size_t obj_score = st->objs[st->res[i]] != 0 ? 1 : 0;
-		if (match_obj_(st, skips, score + obj_score, replaced, i + 1)) {
+		size_t crtc_score = st->conns[st->res[i]] != 0 ? 1 : 0;
+		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, i + 1)) {
 			has_best = true;
 		}
 	}
@@ -178,14 +179,14 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 		++replaced;
 	}
 
-	for (size_t candidate = 0; candidate < st->num_objs; ++candidate) {
+	for (size_t candidate = 0; candidate < st->num_conns; ++candidate) {
 		// We tried this earlier
 		if (candidate == st->orig[i]) {
 			continue;
 		}
 
 		// Not compatible
-		if (!(st->objs[candidate] & (1 << i))) {
+		if (!(st->conns[candidate] & (1 << i))) {
 			continue;
 		}
 
@@ -195,8 +196,8 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 		}
 
 		st->res[i] = candidate;
-		size_t obj_score = st->objs[candidate] != 0 ? 1 : 0;
-		if (match_obj_(st, skips, score + obj_score, replaced, i + 1)) {
+		size_t crtc_score = st->conns[candidate] != 0 ? 1 : 0;
+		if (match_connectors_with_crtcs_(st, skips, score + crtc_score, replaced, i + 1)) {
 			has_best = true;
 		}
 
@@ -205,36 +206,37 @@ static bool match_obj_(struct match_state *st, size_t skips, size_t score, size_
 		}
 	}
 
-	// Maybe this resource can't be matched
+	// Maybe this CRTC can't be matched
 	st->res[i] = UNMATCHED;
-	if (match_obj_(st, skips, score, replaced, i + 1)) {
+	if (match_connectors_with_crtcs_(st, skips, score, replaced, i + 1)) {
 		has_best = true;
 	}
 
 	return has_best;
 }
 
-size_t match_obj(size_t num_objs, const uint32_t objs[static restrict num_objs],
-		size_t num_res, const uint32_t res[static restrict num_res],
-		uint32_t out[static restrict num_res]) {
-	uint32_t solution[num_res];
-	for (size_t i = 0; i < num_res; ++i) {
+size_t match_connectors_with_crtcs(size_t num_conns,
+		const uint32_t conns[static restrict num_conns],
+		size_t num_crtcs, const uint32_t prev_crtcs[static restrict num_crtcs],
+		uint32_t new_crtcs[static restrict num_crtcs]) {
+	uint32_t solution[num_crtcs];
+	for (size_t i = 0; i < num_crtcs; ++i) {
 		solution[i] = UNMATCHED;
 	}
 
 	struct match_state st = {
-		.num_objs = num_objs,
-		.num_res = num_res,
+		.num_conns = num_conns,
+		.num_crtcs = num_crtcs,
 		.score = 0,
 		.replaced = SIZE_MAX,
-		.objs = objs,
+		.conns = conns,
 		.res = solution,
-		.best = out,
-		.orig = res,
+		.best = new_crtcs,
+		.orig = prev_crtcs,
 		.exit_early = false,
 	};
 
-	match_obj_(&st, 0, 0, 0, 0);
+	match_connectors_with_crtcs_(&st, 0, 0, 0, 0);
 	return st.score;
 }
 

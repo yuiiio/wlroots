@@ -18,26 +18,28 @@ const char *drm_connector_status_str(drmModeConnection status);
 void generate_cvt_mode(drmModeModeInfo *mode, int hdisplay, int vdisplay,
 	float vrefresh);
 
-// Part of match_obj
+// Part of match_connectors_with_crtcs
 enum {
 	UNMATCHED = (uint32_t)-1,
 	SKIP = (uint32_t)-2,
 };
 
-/*
- * Tries to match some DRM objects with some other DRM resource.
- * e.g. Match CRTCs with Encoders, CRTCs with Planes.
+/**
+ * Tries to match DRM connectors with DRM CRTCs.
  *
- * objs contains a bit array which resources it can be matched with.
- * e.g. Bit 0 set means can be matched with res[0]
+ * conns contains an array of bitmasks describing compatible CRTCs. For
+ * instance bit 0 set in an connector element means that it's compatible with
+ * CRTC 0.
  *
- * res contains an index of which objs it is matched with or UNMATCHED.
+ * prev_crtcs contains connector indices each CRTC was previously matched with,
+ * or UNMATCHED.
  *
- * This solution is left in out.
+ * new_crtcs is populated with the new connector indices.
  * Returns the total number of matched solutions.
  */
-size_t match_obj(size_t num_objs, const uint32_t objs[static restrict num_objs],
-		size_t num_res, const uint32_t res[static restrict num_res],
-		uint32_t out[static restrict num_res]);
+size_t match_connectors_with_crtcs(size_t num_conns,
+	const uint32_t conns[static restrict num_conns],
+	size_t num_crtcs, const uint32_t prev_crtcs[static restrict num_crtcs],
+	uint32_t new_crtcs[static restrict num_crtcs]);
 
 #endif
