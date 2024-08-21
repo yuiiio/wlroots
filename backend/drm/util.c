@@ -123,9 +123,12 @@ struct match_state {
 	bool exit_early;
 };
 
-/*
- * skips: The number of SKIP elements encountered so far.
- * score: The number of resources we've matched so far.
+/**
+ * Step to process a CRTC.
+ *
+ * This is a naive implementation of maximum bipartite matching.
+ *
+ * score: The number of connectors we've matched so far.
  * replaced: The number of changes from the original solution.
  * crtc_index: The index of the current CRTC.
  *
