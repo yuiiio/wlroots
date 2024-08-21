@@ -215,7 +215,7 @@ static bool match_connectors_with_crtcs_(struct match_state *st, size_t skips,
 	return has_best;
 }
 
-size_t match_connectors_with_crtcs(size_t num_conns,
+void match_connectors_with_crtcs(size_t num_conns,
 		const uint32_t conns[static restrict num_conns],
 		size_t num_crtcs, const uint32_t prev_crtcs[static restrict num_crtcs],
 		uint32_t new_crtcs[static restrict num_crtcs]) {
@@ -237,7 +237,6 @@ size_t match_connectors_with_crtcs(size_t num_conns,
 	};
 
 	match_connectors_with_crtcs_(&st, 0, 0, 0, 0);
-	return st.score;
 }
 
 void generate_cvt_mode(drmModeModeInfo *mode, int hdisplay, int vdisplay,

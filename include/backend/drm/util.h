@@ -35,9 +35,8 @@ enum {
  * or UNMATCHED.
  *
  * new_crtcs is populated with the new connector indices.
- * Returns the total number of matched solutions.
  */
-size_t match_connectors_with_crtcs(size_t num_conns,
+void match_connectors_with_crtcs(size_t num_conns,
 	const uint32_t conns[static restrict num_conns],
 	size_t num_crtcs, const uint32_t prev_crtcs[static restrict num_crtcs],
 	uint32_t new_crtcs[static restrict num_crtcs]);
