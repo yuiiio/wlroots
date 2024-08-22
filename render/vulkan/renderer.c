@@ -1224,7 +1224,6 @@ bool vulkan_read_pixels(struct wlr_vk_renderer *vk_renderer,
 
 		int mem_type = vulkan_find_mem_type(vk_renderer->dev,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
 				VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 				mem_reqs.memoryTypeBits);
 		if (mem_type < 0) {
@@ -1361,6 +1360,19 @@ bool vulkan_read_pixels(struct wlr_vk_renderer *vk_renderer,
 		return false;
 	}
 
+	VkMappedMemoryRange mem_range = {
+		.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+		.memory = dst_img_memory,
+		.offset = 0,
+		.size = VK_WHOLE_SIZE,
+	};
+	res = vkInvalidateMappedMemoryRanges(dev, 1, &mem_range);
+	if (res != VK_SUCCESS) {
+		wlr_vk_error("vkInvalidateMappedMemoryRanges", res);
+		vkUnmapMemory(dev, dst_img_memory);
+		return false;
+	}
+
 	const char *d = (const char *)v + img_sub_layout.offset;
 	unsigned char *p = (unsigned char *)data + dst_y * stride;
 	uint32_t bytes_per_pixel = pixel_format_info->bytes_per_block;
@@ -1376,6 +1388,7 @@ bool vulkan_read_pixels(struct wlr_vk_renderer *vk_renderer,
 	vkUnmapMemory(dev, dst_img_memory);
 	// Don't need to free anything else, since memory and image are cached
 	return true;
+
 free_memory:
 	vkFreeMemory(dev, dst_img_memory, NULL);
 destroy_image:
