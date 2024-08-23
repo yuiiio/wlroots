@@ -645,7 +645,7 @@ static void drm_connector_state_init(struct wlr_drm_connector_state *state,
 
 	if (base->committed & WLR_OUTPUT_STATE_MODE) {
 		switch (base->mode_type) {
-		case WLR_OUTPUT_STATE_MODE_FIXED:;
+		case WLR_OUTPUT_STATE_MODE_FIXED:
 			mode = base->mode;
 			break;
 		case WLR_OUTPUT_STATE_MODE_CUSTOM:
