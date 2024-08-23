@@ -691,11 +691,13 @@ static void scene_node_update(struct wlr_scene_node *node,
 
 struct wlr_scene_rect *wlr_scene_rect_create(struct wlr_scene_tree *parent,
 		int width, int height, const float color[static 4]) {
+	assert(parent);
+	assert(width >= 0 && height >= 0);
+
 	struct wlr_scene_rect *scene_rect = calloc(1, sizeof(*scene_rect));
 	if (scene_rect == NULL) {
 		return NULL;
 	}
-	assert(parent);
 	scene_node_init(&scene_rect->node, WLR_SCENE_NODE_RECT, parent);
 
 	scene_rect->width = width;
@@ -711,6 +713,8 @@ void wlr_scene_rect_set_size(struct wlr_scene_rect *rect, int width, int height)
 	if (rect->width == width && rect->height == height) {
 		return;
 	}
+
+	assert(width >= 0 && height >= 0);
 
 	rect->width = width;
 	rect->height = height;
