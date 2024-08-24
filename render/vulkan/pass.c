@@ -116,7 +116,14 @@ static bool render_pass_submit(struct wlr_render_pass *wlr_pass) {
 			.uv_off = { 0, 0 },
 			.uv_size = { 1, 1 },
 		};
-		size_t dim = pass->color_transform ? pass->color_transform->lut3d.dim_len : 1;
+
+		size_t dim = 1;
+		if (pass->color_transform && pass->color_transform->type == COLOR_TRANSFORM_LUT_3D) {
+			struct wlr_color_transform_lut3d *lut3d =
+				wlr_color_transform_lut3d_from_base(pass->color_transform);
+			dim = lut3d->dim_len;
+		}
+
 		struct wlr_vk_frag_output_pcr_data frag_pcr_data = {
 			.lut_3d_offset = 0.5f / dim,
 			.lut_3d_scale = (float)(dim - 1) / dim,
@@ -894,7 +901,8 @@ static struct wlr_vk_color_transform *vk_color_transform_create(
 	}
 
 	if (transform->type == COLOR_TRANSFORM_LUT_3D) {
-		if (!create_3d_lut_image(renderer, &transform->lut3d,
+		if (!create_3d_lut_image(renderer,
+				wlr_color_transform_lut3d_from_base(transform),
 				&vk_transform->lut_3d.image,
 				&vk_transform->lut_3d.image_view,
 				&vk_transform->lut_3d.memory,

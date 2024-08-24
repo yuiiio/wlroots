@@ -18,7 +18,7 @@ static void handle_lcms_error(cmsContext ctx, cmsUInt32Number code, const char *
 
 struct wlr_color_transform *wlr_color_transform_init_linear_to_icc(
 		const void *data, size_t size) {
-	struct wlr_color_transform *tx = NULL;
+	struct wlr_color_transform_lut3d *tx = NULL;
 
 	cmsContext ctx = cmsCreateContext(NULL, NULL);
 	if (ctx == NULL) {
@@ -95,15 +95,15 @@ struct wlr_color_transform *wlr_color_transform_init_linear_to_icc(
 		}
 	}
 
-	tx = calloc(1, sizeof(struct wlr_color_transform));
+	tx = calloc(1, sizeof(struct wlr_color_transform_lut3d));
 	if (!tx) {
 		goto out_lcms_tr;
 	}
-	tx->type = COLOR_TRANSFORM_LUT_3D;
-	tx->lut3d.dim_len = dim_len;
-	tx->lut3d.lut_3d = lut_3d;
-	tx->ref_count = 1;
-	wlr_addon_set_init(&tx->addons);
+	tx->base.type = COLOR_TRANSFORM_LUT_3D;
+	tx->dim_len = dim_len;
+	tx->lut_3d = lut_3d;
+	tx->base.ref_count = 1;
+	wlr_addon_set_init(&tx->base.addons);
 
 out_lcms_tr:
 	cmsDeleteTransform(lcms_tr);
@@ -115,5 +115,5 @@ out_icc_profile:
 	cmsCloseProfile(icc_profile);
 out_ctx:
 	cmsDeleteContext(ctx);
-	return tx;
+	return &tx->base;
 }
