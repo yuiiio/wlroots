@@ -44,7 +44,7 @@ struct wlr_color_transform *wlr_color_transform_init_srgb(void);
 /**
  * Increase the reference count of the color transform by 1.
  */
-void wlr_color_transform_ref(struct wlr_color_transform *tr);
+struct wlr_color_transform *wlr_color_transform_ref(struct wlr_color_transform *tr);
 
 /**
  * Reduce the reference count of the color transform by 1; freeing it and

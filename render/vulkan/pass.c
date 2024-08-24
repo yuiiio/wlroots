@@ -954,8 +954,7 @@ struct wlr_vk_render_pass *vulkan_begin_render_pass(struct wlr_vk_renderer *rend
 	pass->renderer = renderer;
 	pass->srgb_pathway = using_srgb_pathway;
 	if (options != NULL && options->color_transform != NULL) {
-		wlr_color_transform_ref(options->color_transform);
-		pass->color_transform = options->color_transform;
+		pass->color_transform = wlr_color_transform_ref(options->color_transform);
 	}
 
 	rect_union_init(&pass->updated_region);

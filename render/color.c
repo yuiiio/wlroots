@@ -20,8 +20,9 @@ static void color_transform_destroy(struct wlr_color_transform *tr) {
 	free(tr);
 }
 
-void wlr_color_transform_ref(struct wlr_color_transform *tr) {
+struct wlr_color_transform *wlr_color_transform_ref(struct wlr_color_transform *tr) {
 	tr->ref_count += 1;
+	return tr;
 }
 
 void wlr_color_transform_unref(struct wlr_color_transform *tr) {
