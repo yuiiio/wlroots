@@ -1518,10 +1518,6 @@ static void scene_node_output_update(struct wlr_scene_node *node,
 
 static void scene_output_update_geometry(struct wlr_scene_output *scene_output,
 		bool force_update) {
-	int ring_width, ring_height;
-	wlr_output_transformed_resolution(scene_output->output, &ring_width, &ring_height);
-	wlr_damage_ring_set_bounds(&scene_output->damage_ring, ring_width, ring_height);
-
 	scene_output_damage_whole(scene_output);
 
 	scene_node_output_update(&scene_output->scene->tree.node,
@@ -2020,9 +2016,6 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 
 	struct render_list_entry *list_data = list_con.render_list->data;
 	int list_len = list_con.render_list->size / sizeof(*list_data);
-
-	wlr_damage_ring_set_bounds(&scene_output->damage_ring,
-		render_data.trans_width, render_data.trans_height);
 
 	if (debug_damage == WLR_SCENE_DEBUG_DAMAGE_RERENDER) {
 		scene_output_damage_whole(scene_output);

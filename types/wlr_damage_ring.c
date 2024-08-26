@@ -9,11 +9,7 @@
 #define WLR_DAMAGE_RING_MAX_RECTS 20
 
 void wlr_damage_ring_init(struct wlr_damage_ring *ring) {
-	*ring = (struct wlr_damage_ring){
-		.width = INT_MAX,
-		.height = INT_MAX,
-	};
-
+	*ring = (struct wlr_damage_ring){ 0 };
 	pixman_region32_init(&ring->current);
 	wl_list_init(&ring->buffers);
 }
@@ -31,22 +27,6 @@ void wlr_damage_ring_finish(struct wlr_damage_ring *ring) {
 	wl_list_for_each_safe(entry, tmp_entry, &ring->buffers, link) {
 		buffer_destroy(entry);
 	}
-}
-
-void wlr_damage_ring_set_bounds(struct wlr_damage_ring *ring,
-		int32_t width, int32_t height) {
-	if (width == 0 || height == 0) {
-		width = INT_MAX;
-		height = INT_MAX;
-	}
-
-	if (ring->width == width && ring->height == height) {
-		return;
-	}
-
-	ring->width = width;
-	ring->height = height;
-	wlr_damage_ring_add_whole(ring);
 }
 
 void wlr_damage_ring_add(struct wlr_damage_ring *ring,
