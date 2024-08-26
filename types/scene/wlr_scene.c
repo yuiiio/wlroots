@@ -335,33 +335,43 @@ static void transform_output_box(struct wlr_box *box, const struct render_data *
 
 static void scene_output_damage(struct wlr_scene_output *scene_output,
 		const pixman_region32_t *region) {
-	if (wlr_damage_ring_add(&scene_output->damage_ring, region)) {
-		int width, height;
-		wlr_output_transformed_resolution(scene_output->output, &width, &height);
+	int width, height;
+	wlr_output_transformed_resolution(scene_output->output, &width, &height);
 
-		wlr_output_schedule_frame(scene_output->output);
+	pixman_region32_t clipped;
+	pixman_region32_init(&clipped);
+	pixman_region32_intersect_rect(&clipped, region, 0, 0, width, height);
 
-		struct wlr_output *output = scene_output->output;
-		enum wl_output_transform transform =
-			wlr_output_transform_invert(scene_output->output->transform);
-
-		pixman_region32_t frame_damage;
-		pixman_region32_init(&frame_damage);
-		wlr_region_transform(&frame_damage, region, transform, width, height);
-
-		pixman_region32_union(&scene_output->pending_commit_damage,
-			&scene_output->pending_commit_damage, &frame_damage);
-		pixman_region32_intersect_rect(&scene_output->pending_commit_damage,
-			&scene_output->pending_commit_damage, 0, 0, output->width, output->height);
-		pixman_region32_fini(&frame_damage);
+	if (!pixman_region32_not_empty(&clipped)) {
+		pixman_region32_fini(&clipped);
+		return;
 	}
+
+	wlr_damage_ring_add(&scene_output->damage_ring, &clipped);
+	pixman_region32_fini(&clipped);
+	wlr_output_schedule_frame(scene_output->output);
+
+	struct wlr_output *output = scene_output->output;
+	enum wl_output_transform transform =
+		wlr_output_transform_invert(scene_output->output->transform);
+
+	pixman_region32_t frame_damage;
+	pixman_region32_init(&frame_damage);
+	wlr_region_transform(&frame_damage, region, transform, width, height);
+
+	pixman_region32_union(&scene_output->pending_commit_damage,
+		&scene_output->pending_commit_damage, &frame_damage);
+	pixman_region32_intersect_rect(&scene_output->pending_commit_damage,
+		&scene_output->pending_commit_damage, 0, 0, output->width, output->height);
+	pixman_region32_fini(&frame_damage);
 }
 
 static void scene_output_damage_whole(struct wlr_scene_output *scene_output) {
-	struct wlr_damage_ring *ring = &scene_output->damage_ring;
+	int width, height;
+	wlr_output_transformed_resolution(scene_output->output, &width, &height);
 
 	pixman_region32_t damage;
-	pixman_region32_init_rect(&damage, 0, 0, ring->width, ring->height);
+	pixman_region32_init_rect(&damage, 0, 0, width, height);
 	scene_output_damage(scene_output, &damage);
 	pixman_region32_fini(&damage);
 }
