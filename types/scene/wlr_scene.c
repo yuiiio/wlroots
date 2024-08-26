@@ -336,18 +336,14 @@ static void transform_output_box(struct wlr_box *box, const struct render_data *
 static void scene_output_damage(struct wlr_scene_output *scene_output,
 		const pixman_region32_t *region) {
 	if (wlr_damage_ring_add(&scene_output->damage_ring, region)) {
+		int width, height;
+		wlr_output_transformed_resolution(scene_output->output, &width, &height);
+
 		wlr_output_schedule_frame(scene_output->output);
 
 		struct wlr_output *output = scene_output->output;
 		enum wl_output_transform transform =
 			wlr_output_transform_invert(scene_output->output->transform);
-
-		int width = output->width;
-		int height = output->height;
-		if (transform & WL_OUTPUT_TRANSFORM_90) {
-			width = output->height;
-			height = output->width;
-		}
 
 		pixman_region32_t frame_damage;
 		pixman_region32_init(&frame_damage);
