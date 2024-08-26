@@ -52,7 +52,7 @@ static bool render_pass_submit(struct wlr_render_pass *wlr_pass) {
 			goto out;
 		}
 
-		bool ok = wlr_drm_syncobj_timeline_import_sync_file(pass->signal_timeline, pass->signal_point, sync_file_fd);
+		ok = wlr_drm_syncobj_timeline_import_sync_file(pass->signal_timeline, pass->signal_point, sync_file_fd);
 		close(sync_file_fd);
 		if (!ok) {
 			goto out;
