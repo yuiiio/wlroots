@@ -62,8 +62,17 @@ void wlr_damage_ring_add_box(struct wlr_damage_ring *ring,
 }
 
 void wlr_damage_ring_add_whole(struct wlr_damage_ring *ring) {
+	int width = 0;
+	int height = 0;
+
+	struct wlr_damage_ring_buffer *entry;
+	wl_list_for_each(entry, &ring->buffers, link) {
+		width = width < entry->buffer->width ? entry->buffer->width : width;
+		height = height < entry->buffer->height ? entry->buffer->height : height;
+	}
+
 	pixman_region32_union_rect(&ring->current,
-		&ring->current, 0, 0, ring->width, ring->height);
+		&ring->current, 0, 0, width, height);
 }
 
 static void entry_squash_damage(struct wlr_damage_ring_buffer *entry) {
@@ -121,7 +130,7 @@ void wlr_damage_ring_rotate_buffer(struct wlr_damage_ring *ring,
 
 	pixman_region32_clear(damage);
 	pixman_region32_union_rect(damage, damage,
-		0, 0, ring->width, ring->height);
+		0, 0, buffer->width, buffer->height);
 
 	entry = calloc(1, sizeof(*entry));
 	if (!entry) {
