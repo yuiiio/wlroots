@@ -492,7 +492,12 @@ static void release_signaller_handle_buffer_release(struct wl_listener *listener
 bool wlr_linux_drm_syncobj_v1_state_signal_release_with_buffer(
 		struct wlr_linux_drm_syncobj_surface_v1_state *state, struct wlr_buffer *buffer) {
 	assert(buffer->n_locks > 0);
-	assert(state->release_timeline != NULL);
+	if (state->release_timeline == NULL) {
+		// This can happen if an existing surface with a buffer has a
+		// syncobj_surface_v1_state created but no new buffer with release
+		// timeline committed.
+		return true;
+	}
 
 	struct release_signaller *signaller = calloc(1, sizeof(*signaller));
 	if (signaller == NULL) {
