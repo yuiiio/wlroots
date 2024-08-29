@@ -722,7 +722,7 @@ static bool drm_connector_state_update_primary_fb(struct wlr_drm_connector *conn
 	assert(state->wait_timeline == NULL);
 
 	struct wlr_buffer *local_buf;
-	if (drm->parent) {
+	if (drm->mgpu_renderer.wlr_rend) {
 		struct wlr_drm_format format = {0};
 		if (!drm_plane_pick_render_format(plane, &format, &drm->mgpu_renderer)) {
 			wlr_log(WLR_ERROR, "Failed to pick primary plane format");
@@ -776,7 +776,7 @@ static bool drm_connector_set_pending_layer_fbs(struct wlr_drm_connector *conn,
 	struct wlr_drm_backend *drm = conn->backend;
 
 	struct wlr_drm_crtc *crtc = conn->crtc;
-	if (!crtc || drm->parent) {
+	if (!crtc || drm->mgpu_renderer.wlr_rend) {
 		return false;
 	}
 
@@ -835,7 +835,7 @@ static bool drm_connector_prepare(struct wlr_drm_connector_state *conn_state, bo
 		return false;
 	}
 
-	if (test_only && conn->backend->parent) {
+	if (test_only && conn->backend->mgpu_renderer.wlr_rend) {
 		// If we're running as a secondary GPU, we can't perform an atomic
 		// commit without blitting a buffer.
 		return true;
@@ -905,7 +905,7 @@ static bool drm_connector_commit_state(struct wlr_drm_connector *conn,
 		goto out;
 	}
 
-	if (test_only && conn->backend->parent) {
+	if (test_only && conn->backend->mgpu_renderer.wlr_rend) {
 		// If we're running as a secondary GPU, we can't perform an atomic
 		// commit without blitting a buffer.
 		ok = true;
@@ -1102,7 +1102,7 @@ static bool drm_connector_set_cursor(struct wlr_output *output,
 		}
 
 		struct wlr_buffer *local_buf;
-		if (drm->parent) {
+		if (drm->mgpu_renderer.wlr_rend) {
 			struct wlr_drm_format format = {0};
 			if (!drm_plane_pick_render_format(plane, &format, &drm->mgpu_renderer)) {
 				wlr_log(WLR_ERROR, "Failed to pick cursor plane format");
@@ -1216,7 +1216,7 @@ static const struct wlr_drm_format_set *drm_connector_get_cursor_formats(
 	if (!plane) {
 		return NULL;
 	}
-	if (conn->backend->parent) {
+	if (conn->backend->mgpu_renderer.wlr_rend) {
 		return &conn->backend->mgpu_formats;
 	}
 	return &plane->formats;
@@ -1245,7 +1245,7 @@ static const struct wlr_drm_format_set *drm_connector_get_primary_formats(
 	if (!drm_connector_alloc_crtc(conn)) {
 		return NULL;
 	}
-	if (conn->backend->parent) {
+	if (conn->backend->mgpu_renderer.wlr_rend) {
 		return &conn->backend->mgpu_formats;
 	}
 	return &conn->crtc->primary->formats;
@@ -1900,7 +1900,7 @@ bool commit_drm_device(struct wlr_drm_backend *drm,
 		modeset |= output_state->base.allow_reconfiguration;
 	}
 
-	if (test_only && drm->parent) {
+	if (test_only && drm->mgpu_renderer.wlr_rend) {
 		// If we're running as a secondary GPU, we can't perform an atomic
 		// commit without blitting a buffer.
 		ok = true;
@@ -1978,7 +1978,7 @@ static void handle_page_flip(int fd, unsigned seq,
 	 * data between the GPUs, even if we were using the direct scanout
 	 * interface.
 	 */
-	if (!drm->parent) {
+	if (!drm->mgpu_renderer.wlr_rend) {
 		present_flags |= WLR_OUTPUT_PRESENT_ZERO_COPY;
 	}
 

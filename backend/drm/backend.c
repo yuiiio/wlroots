@@ -53,7 +53,7 @@ static void backend_destroy(struct wlr_backend *backend) {
 	wl_list_remove(&drm->dev_change.link);
 	wl_list_remove(&drm->dev_remove.link);
 
-	if (drm->parent) {
+	if (drm->mgpu_renderer.wlr_rend) {
 		finish_drm_renderer(&drm->mgpu_renderer);
 	}
 
@@ -271,7 +271,7 @@ struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
 		}
 	}
 
-	if (drm->parent) {
+	if (drm->mgpu_renderer.wlr_rend) {
 		drm->backend.features.timeline = drm->backend.features.timeline &&
 			drm->mgpu_renderer.wlr_rend->features.timeline;
 	}
