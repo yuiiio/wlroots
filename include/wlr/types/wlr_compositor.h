@@ -187,28 +187,47 @@ struct wlr_surface {
 	struct wl_resource *role_resource;
 
 	struct {
+		/**
+		 * Signals that the client has sent a wl_surface.commit request.
+		 *
+		 * The state to be committed can be accessed in wlr_surface.pending.
+		 *
+		 * The commit may not be applied immediately, in which case it's marked
+		 * as "cached" and put into a queue. See wlr_surface_lock_pending().
+		 */
 		struct wl_signal client_commit;
+		/**
+		 * Signals that a commit has been applied.
+		 *
+		 * The new state can be accessed in wlr_surface.current.
+		 */
 		struct wl_signal commit;
 
 		/**
-		 * The `map` event signals that the surface has a non-null buffer
-		 * committed and is ready to be displayed.
+		 * Signals that the surface has a non-null buffer committed and is
+		 * ready to be displayed.
 		 */
 		struct wl_signal map;
 		/**
-		 * The `unmap` event signals that the surface shouldn't be displayed
-		 * anymore. This can happen when a null buffer is committed,
-		 * the associated role object is destroyed, or when the role-specific
-		 * conditions for the surface to be mapped no longer apply.
+		 * Signals that the surface shouldn't be displayed anymore. This can
+		 * happen when a null buffer is committed, the associated role object
+		 * is destroyed, or when the role-specific conditions for the surface
+		 * to be mapped no longer apply.
 		 */
 		struct wl_signal unmap;
 
 		/**
+		 * Signals that a new child sub-surface has been added.
+		 *
 		 * Note: unlike other new_* signals, new_subsurface is emitted when
 		 * the subsurface is added to the parent surface's current state,
 		 * not when the object is created.
 		 */
 		struct wl_signal new_subsurface; // struct wlr_subsurface
+
+		/**
+		 * Signals that the surface is being destroyed.
+		 */
 		struct wl_signal destroy;
 	} events;
 
