@@ -1811,8 +1811,6 @@ void scan_drm_connectors(struct wlr_drm_backend *drm,
 		destroy_drm_connector(conn);
 	}
 
-	realloc_crtcs(drm, NULL);
-
 	for (size_t i = 0; i < new_outputs_len; ++i) {
 		struct wlr_drm_connector *conn = new_outputs[i];
 
