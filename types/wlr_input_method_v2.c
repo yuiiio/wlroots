@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -306,34 +307,30 @@ void wlr_input_method_keyboard_grab_v2_send_modifiers(
 		modifiers->locked, modifiers->group);
 }
 
-static bool keyboard_grab_send_keymap(
+static void keyboard_grab_send_keymap(
 		struct wlr_input_method_keyboard_grab_v2 *keyboard_grab,
 		struct wlr_keyboard *keyboard) {
-	int keymap_fd = allocate_shm_file(keyboard->keymap_size);
-	if (keymap_fd < 0) {
-		wlr_log(WLR_ERROR, "creating a keymap file for %zu bytes failed",
-			keyboard->keymap_size);
-		return false;
+	enum wl_keyboard_keymap_format format;
+	int fd, devnull = -1;
+	if (keyboard->keymap != NULL) {
+		format = WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1;
+		fd = keyboard->keymap_fd;
+	} else {
+		format = WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP;
+		devnull = open("/dev/null", O_RDONLY | O_CLOEXEC);
+		if (devnull < 0) {
+			wlr_log_errno(WLR_ERROR, "Failed to open /dev/null");
+			return;
+		}
+		fd = devnull;
 	}
-
-	void *ptr = mmap(NULL, keyboard->keymap_size, PROT_READ | PROT_WRITE,
-		MAP_SHARED, keymap_fd, 0);
-	if (ptr == MAP_FAILED) {
-		wlr_log(WLR_ERROR, "failed to mmap() %zu bytes",
-			keyboard->keymap_size);
-		close(keymap_fd);
-		return false;
-	}
-
-	memcpy(ptr, keyboard->keymap_string, keyboard->keymap_size);
-	munmap(ptr, keyboard->keymap_size);
 
 	zwp_input_method_keyboard_grab_v2_send_keymap(keyboard_grab->resource,
-		WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, keymap_fd,
-		keyboard->keymap_size);
+		format, fd, keyboard->keymap_size);
 
-	close(keymap_fd);
-	return true;
+	if (devnull >= 0) {
+		close(devnull);
+	}
 }
 
 static void keyboard_grab_send_repeat_info(
@@ -379,15 +376,12 @@ void wlr_input_method_keyboard_grab_v2_set_keyboard(
 
 	if (keyboard) {
 		if (keyboard_grab->keyboard == NULL ||
-				strcmp(keyboard_grab->keyboard->keymap_string,
-				keyboard->keymap_string) != 0) {
-			// send keymap only if it is changed, or if input method is not
-			// aware that it did not change and blindly send it back with
-			// virtual keyboard, it may cause an infinite recursion.
-			if (!keyboard_grab_send_keymap(keyboard_grab, keyboard)) {
-				wlr_log(WLR_ERROR, "Failed to send keymap for input-method keyboard grab");
-				return;
-			}
+				!wlr_keyboard_keymaps_match(keyboard_grab->keyboard->keymap,
+				keyboard->keymap)) {
+			// Only send keymap if it changed, otherwise if the input-method
+			// client sent back the same keymap with virtual-keyboard, it would
+			// result in an infinite loop of keymap updates.
+			keyboard_grab_send_keymap(keyboard_grab, keyboard);
 		}
 		keyboard_grab_send_repeat_info(keyboard_grab, keyboard);
 		keyboard_grab->keyboard_keymap.notify = handle_keyboard_keymap;
