@@ -122,6 +122,7 @@ static void tearing_control_manager_handle_get_tearing_control(
 			wl_resource_get_version(resource), id);
 
 	if (created_resource == NULL) {
+		free(hint);
 		wl_resource_post_no_memory(resource);
 		return;
 	}
