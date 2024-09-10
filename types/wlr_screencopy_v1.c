@@ -165,17 +165,19 @@ static void frame_send_damage(struct wlr_screencopy_frame_v1 *frame) {
 		return;
 	}
 
-	// TODO: send fine-grained damage events
-	struct pixman_box32 *damage_box =
-		pixman_region32_extents(&damage->damage);
+	int n_boxes;
+	const pixman_box32_t *boxes = pixman_region32_rectangles(&damage->damage, &n_boxes);
+	for (int i = 0; i < n_boxes; i++) {
+		const pixman_box32_t *box = &boxes[i];
 
-	int damage_x = damage_box->x1;
-	int damage_y = damage_box->y1;
-	int damage_width = damage_box->x2 - damage_box->x1;
-	int damage_height = damage_box->y2 - damage_box->y1;
+		int damage_x = box->x1;
+		int damage_y = box->y1;
+		int damage_width = box->x2 - box->x1;
+		int damage_height = box->y2 - box->y1;
 
-	zwlr_screencopy_frame_v1_send_damage(frame->resource,
-		damage_x, damage_y, damage_width, damage_height);
+		zwlr_screencopy_frame_v1_send_damage(frame->resource,
+			damage_x, damage_y, damage_width, damage_height);
+	}
 
 	pixman_region32_clear(&damage->damage);
 }
