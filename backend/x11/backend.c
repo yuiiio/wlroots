@@ -512,7 +512,10 @@ struct wlr_backend *wlr_x11_backend_create(struct wl_event_loop *loop,
 		xcb_present_query_version(x11->xcb, 1, 2);
 	xcb_present_query_version_reply_t *present_reply =
 		xcb_present_query_version_reply(x11->xcb, present_cookie, NULL);
-	if (!present_reply || present_reply->major_version < 1) {
+	if (!present_reply) {
+		wlr_log(WLR_ERROR, "Failed to query Present version");
+		goto error_display;
+	} else if (present_reply->major_version < 1) {
 		wlr_log(WLR_ERROR, "X11 does not support required Present version "
 			"(has %"PRIu32".%"PRIu32", want 1.0)",
 			present_reply->major_version, present_reply->minor_version);
@@ -533,7 +536,10 @@ struct wlr_backend *wlr_x11_backend_create(struct wl_event_loop *loop,
 		xcb_xfixes_query_version(x11->xcb, 4, 0);
 	xcb_xfixes_query_version_reply_t *fixes_reply =
 		xcb_xfixes_query_version_reply(x11->xcb, fixes_cookie, NULL);
-	if (!fixes_reply || fixes_reply->major_version < 4) {
+	if (!fixes_reply) {
+		wlr_log(WLR_ERROR, "Failed to query Xfixes version");
+		goto error_display;
+	} else if (fixes_reply->major_version < 4) {
 		wlr_log(WLR_ERROR, "X11 does not support required Xfixes version "
 			"(has %"PRIu32".%"PRIu32", want 4.0)",
 			fixes_reply->major_version, fixes_reply->minor_version);
@@ -555,7 +561,10 @@ struct wlr_backend *wlr_x11_backend_create(struct wl_event_loop *loop,
 		xcb_input_xi_query_version(x11->xcb, 2, 0);
 	xcb_input_xi_query_version_reply_t *xi_reply =
 		xcb_input_xi_query_version_reply(x11->xcb, xi_cookie, NULL);
-	if (!xi_reply || xi_reply->major_version < 2) {
+	if (!xi_reply) {
+		wlr_log(WLR_ERROR, "Failed to query Xinput version");
+		goto error_display;
+	} else if (xi_reply->major_version < 2) {
 		wlr_log(WLR_ERROR, "X11 does not support required Xinput version "
 			"(has %"PRIu32".%"PRIu32", want 2.0)",
 			xi_reply->major_version, xi_reply->minor_version);
