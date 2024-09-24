@@ -51,9 +51,7 @@ struct wlr_linux_dmabuf_feedback_v1_table_entry {
 	uint64_t modifier;
 };
 
-// TODO: switch back to static_assert once this fix propagates in stable trees:
-// https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
-_Static_assert(sizeof(struct wlr_linux_dmabuf_feedback_v1_table_entry) == 16,
+static_assert(sizeof(struct wlr_linux_dmabuf_feedback_v1_table_entry) == 16,
 	"Expected wlr_linux_dmabuf_feedback_v1_table_entry to be tightly packed");
 
 struct wlr_linux_dmabuf_v1_surface {
