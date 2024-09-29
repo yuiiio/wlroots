@@ -390,6 +390,12 @@ static struct wlr_texture *vulkan_texture_from_pixels(
 		return NULL;
 	}
 
+	if (width > fmt->shm.max_extent.width || height > fmt->shm.max_extent.height) {
+		wlr_log(WLR_ERROR, "Texture is too large to upload (%"PRIu32"x%"PRIu32" > %"PRIu32"x%"PRIu32")",
+			width, height, fmt->shm.max_extent.width, fmt->shm.max_extent.height);
+		return NULL;
+	}
+
 	struct wlr_vk_texture *texture = vulkan_texture_create(renderer, width, height);
 	if (texture == NULL) {
 		return NULL;
