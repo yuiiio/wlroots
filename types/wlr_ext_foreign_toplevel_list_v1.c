@@ -54,6 +54,13 @@ static bool update_string(struct wlr_ext_foreign_toplevel_handle_v1 *toplevel,
 	return true;
 }
 
+struct wlr_ext_foreign_toplevel_handle_v1 *wlr_ext_foreign_toplevel_handle_v1_from_resource(
+		struct wl_resource *resource) {
+	assert(wl_resource_instance_of(resource, &ext_foreign_toplevel_handle_v1_interface,
+		&toplevel_handle_impl));
+	return wl_resource_get_user_data(resource);
+}
+
 void wlr_ext_foreign_toplevel_handle_v1_update_state(
 		struct wlr_ext_foreign_toplevel_handle_v1 *toplevel,
 		const struct wlr_ext_foreign_toplevel_handle_v1_state *state) {

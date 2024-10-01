@@ -64,4 +64,7 @@ void wlr_ext_foreign_toplevel_handle_v1_update_state(
 	struct wlr_ext_foreign_toplevel_handle_v1 *toplevel,
 	const struct wlr_ext_foreign_toplevel_handle_v1_state *state);
 
+struct wlr_ext_foreign_toplevel_handle_v1 *wlr_ext_foreign_toplevel_handle_v1_from_resource(
+	struct wl_resource *resource);
+
 #endif
