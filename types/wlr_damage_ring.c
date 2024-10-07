@@ -49,35 +49,16 @@ void wlr_damage_ring_set_bounds(struct wlr_damage_ring *ring,
 	wlr_damage_ring_add_whole(ring);
 }
 
-bool wlr_damage_ring_add(struct wlr_damage_ring *ring,
+void wlr_damage_ring_add(struct wlr_damage_ring *ring,
 		const pixman_region32_t *damage) {
-	pixman_region32_t clipped;
-	pixman_region32_init(&clipped);
-	pixman_region32_intersect_rect(&clipped, damage,
-		0, 0, ring->width, ring->height);
-	bool intersects = pixman_region32_not_empty(&clipped);
-	if (intersects) {
-		pixman_region32_union(&ring->current, &ring->current, &clipped);
-	}
-	pixman_region32_fini(&clipped);
-	return intersects;
+	pixman_region32_union(&ring->current, &ring->current, damage);
 }
 
-bool wlr_damage_ring_add_box(struct wlr_damage_ring *ring,
+void wlr_damage_ring_add_box(struct wlr_damage_ring *ring,
 		const struct wlr_box *box) {
-	struct wlr_box clipped = {
-		.x = 0,
-		.y = 0,
-		.width = ring->width,
-		.height = ring->height,
-	};
-	if (wlr_box_intersection(&clipped, &clipped, box)) {
-		pixman_region32_union_rect(&ring->current,
-			&ring->current, clipped.x, clipped.y,
-			clipped.width, clipped.height);
-		return true;
-	}
-	return false;
+	pixman_region32_union_rect(&ring->current,
+		&ring->current, box->x, box->y,
+		box->width, box->height);
 }
 
 void wlr_damage_ring_add_whole(struct wlr_damage_ring *ring) {
