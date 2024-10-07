@@ -116,6 +116,8 @@ void wlr_damage_ring_rotate_buffer(struct wlr_damage_ring *ring,
 			continue;
 		}
 
+		pixman_region32_intersect_rect(damage, damage, 0, 0, buffer->width, buffer->height);
+
 		// Check the number of rectangles
 		int n_rects = pixman_region32_n_rects(damage);
 		if (n_rects > WLR_DAMAGE_RING_MAX_RECTS) {
