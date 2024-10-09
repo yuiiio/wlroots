@@ -325,11 +325,24 @@ struct render_data {
 
 static void transform_output_damage(pixman_region32_t *damage, const struct render_data *data) {
 	enum wl_output_transform transform = wlr_output_transform_invert(data->transform);
+	scale_output_damage(damage, data->scale);
 	wlr_region_transform(damage, damage, transform, data->trans_width, data->trans_height);
+}
+
+static int scale_length(int length, int offset, float scale) {
+	return round((offset + length) * scale) - round(offset * scale);
+}
+
+static void scale_box(struct wlr_box *box, float scale) {
+	box->width = scale_length(box->width, box->x, scale);
+	box->height = scale_length(box->height, box->y, scale);
+	box->x = round(box->x * scale);
+	box->y = round(box->y * scale);
 }
 
 static void transform_output_box(struct wlr_box *box, const struct render_data *data) {
 	enum wl_output_transform transform = wlr_output_transform_invert(data->transform);
+	scale_box(box, data->scale);
 	wlr_box_transform(box, box, transform, data->trans_width, data->trans_height);
 }
 
@@ -1103,17 +1116,6 @@ static void scene_node_get_size(struct wlr_scene_node *node,
 	}
 }
 
-static int scale_length(int length, int offset, float scale) {
-	return round((offset + length) * scale) - round(offset * scale);
-}
-
-static void scale_box(struct wlr_box *box, float scale) {
-	box->width = scale_length(box->width, box->x, scale);
-	box->height = scale_length(box->height, box->y, scale);
-	box->x = round(box->x * scale);
-	box->y = round(box->y * scale);
-}
-
 void wlr_scene_node_set_enabled(struct wlr_scene_node *node, bool enabled) {
 	if (node->enabled == enabled) {
 		return;
@@ -1332,7 +1334,6 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 	pixman_region32_init(&render_region);
 	pixman_region32_copy(&render_region, &node->visible);
 	pixman_region32_translate(&render_region, -data->logical.x, -data->logical.y);
-	scale_output_damage(&render_region, data->scale);
 	transform_output_damage(&render_region, data);
 	pixman_region32_intersect(&render_region, &render_region, &data->damage);
 	if (!pixman_region32_not_empty(&render_region)) {
@@ -1348,13 +1349,11 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 		.y = y,
 	};
 	scene_node_get_size(node, &dst_box.width, &dst_box.height);
-	scale_box(&dst_box, data->scale);
 	transform_output_box(&dst_box, data);
 
 	pixman_region32_t opaque;
 	pixman_region32_init(&opaque);
 	scene_node_opaque_region(node, x, y, &opaque);
-	scale_output_damage(&opaque, data->scale);
 	transform_output_damage(&opaque, data);
 	pixman_region32_subtract(&opaque, &render_region, &opaque);
 
@@ -2152,7 +2151,6 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 			pixman_region32_intersect(&opaque, &opaque, &entry->node->visible);
 
 			pixman_region32_translate(&opaque, -scene_output->x, -scene_output->y);
-			wlr_region_scale(&opaque, &opaque, render_data.scale);
 			transform_output_damage(&opaque, &render_data);
 			pixman_region32_subtract(&background, &background, &opaque);
 			pixman_region32_fini(&opaque);
