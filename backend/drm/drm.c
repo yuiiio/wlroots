@@ -1652,11 +1652,6 @@ static bool connect_drm_connector(struct wlr_drm_connector *wlr_conn,
 		output->non_desktop = non_desktop;
 	}
 
-	output->timeline = drm->iface != &legacy_iface;
-	if (drm->parent) {
-		output->timeline = output->timeline && drm->mgpu_renderer.wlr_rend->features.timeline;
-	}
-
 	memset(wlr_conn->max_bpc_bounds, 0, sizeof(wlr_conn->max_bpc_bounds));
 	if (wlr_conn->props.max_bpc != 0) {
 		if (!introspect_drm_prop_range(drm->fd, wlr_conn->props.max_bpc,
