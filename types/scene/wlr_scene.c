@@ -323,7 +323,7 @@ struct render_data {
 	pixman_region32_t damage;
 };
 
-static void transform_output_damage(pixman_region32_t *damage, const struct render_data *data) {
+static void logical_to_buffer_coords(pixman_region32_t *damage, const struct render_data *data) {
 	enum wl_output_transform transform = wlr_output_transform_invert(data->transform);
 	scale_output_damage(damage, data->scale);
 	wlr_region_transform(damage, damage, transform, data->trans_width, data->trans_height);
@@ -354,7 +354,7 @@ static void transform_output_box(struct wlr_box *box, const struct render_data *
 	wlr_box_transform(box, box, transform, data->trans_width, data->trans_height);
 }
 
-static void scene_output_damage_buffer_coords(struct wlr_scene_output *scene_output,
+static void scene_output_damage(struct wlr_scene_output *scene_output,
 		const pixman_region32_t *frame_damage) {
 	if (!pixman_region32_not_empty(frame_damage)) {
 		return;
@@ -372,7 +372,7 @@ static void scene_output_damage_whole(struct wlr_scene_output *scene_output) {
 
 	pixman_region32_t damage;
 	pixman_region32_init_rect(&damage, 0, 0, output->width, output->height);
-	scene_output_damage_buffer_coords(scene_output, &damage);
+	scene_output_damage(scene_output, &damage);
 	pixman_region32_fini(&damage);
 }
 
@@ -390,7 +390,7 @@ static void scene_damage_outputs(struct wlr_scene *scene, pixman_region32_t *dam
 			-scene_output->x, -scene_output->y);
 		scale_output_damage(&output_damage, scene_output->output->scale);
 		output_to_buffer_coords(&output_damage, scene_output->output);
-		scene_output_damage_buffer_coords(scene_output, &output_damage);
+		scene_output_damage(scene_output, &output_damage);
 		pixman_region32_fini(&output_damage);
 	}
 }
@@ -953,7 +953,7 @@ void wlr_scene_buffer_set_buffer_with_options(struct wlr_scene_buffer *scene_buf
 			(int)round((lx - scene_output->x) * output_scale),
 			(int)round((ly - scene_output->y) * output_scale));
 		output_to_buffer_coords(&output_damage, scene_output->output);
-		scene_output_damage_buffer_coords(scene_output, &output_damage);
+		scene_output_damage(scene_output, &output_damage);
 		pixman_region32_fini(&output_damage);
 	}
 
@@ -1324,7 +1324,7 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 	pixman_region32_init(&render_region);
 	pixman_region32_copy(&render_region, &node->visible);
 	pixman_region32_translate(&render_region, -data->logical.x, -data->logical.y);
-	transform_output_damage(&render_region, data);
+	logical_to_buffer_coords(&render_region, data);
 	pixman_region32_intersect(&render_region, &render_region, &data->damage);
 	if (!pixman_region32_not_empty(&render_region)) {
 		pixman_region32_fini(&render_region);
@@ -1344,7 +1344,7 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 	pixman_region32_t opaque;
 	pixman_region32_init(&opaque);
 	scene_node_opaque_region(node, x, y, &opaque);
-	transform_output_damage(&opaque, data);
+	logical_to_buffer_coords(&opaque, data);
 	pixman_region32_subtract(&opaque, &render_region, &opaque);
 
 	switch (node->type) {
@@ -1371,7 +1371,7 @@ static void scene_entry_render(struct render_list_entry *entry, const struct ren
 		struct wlr_texture *texture = scene_buffer_get_texture(scene_buffer,
 			data->output->output->renderer);
 		if (texture == NULL) {
-			scene_output_damage_buffer_coords(data->output, &render_region);
+			scene_output_damage(data->output, &render_region);
 			break;
 		}
 
@@ -1568,7 +1568,7 @@ static void scene_output_handle_damage(struct wl_listener *listener, void *data)
 	pixman_region32_copy(&damage, event->damage);
 	wlr_region_transform(&damage, &damage,
 		wlr_output_transform_invert(output->transform), width, height);
-	scene_output_damage_buffer_coords(scene_output, &damage);
+	scene_output_damage(scene_output, &damage);
 	pixman_region32_fini(&damage);
 }
 
@@ -2054,7 +2054,7 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 			}
 		}
 
-		scene_output_damage_buffer_coords(scene_output, &acc_damage);
+		scene_output_damage(scene_output, &acc_damage);
 		pixman_region32_fini(&acc_damage);
 	}
 
@@ -2152,7 +2152,7 @@ bool wlr_scene_output_build_state(struct wlr_scene_output *scene_output,
 			pixman_region32_intersect(&opaque, &opaque, &entry->node->visible);
 
 			pixman_region32_translate(&opaque, -scene_output->x, -scene_output->y);
-			transform_output_damage(&opaque, &render_data);
+			logical_to_buffer_coords(&opaque, &render_data);
 			pixman_region32_subtract(&background, &background, &opaque);
 			pixman_region32_fini(&opaque);
 		}
