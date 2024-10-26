@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <wayland-server-core.h>
 #include <wlr/render/drm_syncobj.h>
+#include <wlr/util/addon.h>
 #include <wlr/util/log.h>
 
 #include "config.h"
@@ -21,6 +22,8 @@ static struct wlr_drm_syncobj_timeline *timeline_create(int drm_fd, uint32_t han
 	timeline->drm_fd = drm_fd;
 	timeline->n_refs = 1;
 	timeline->handle = handle;
+
+	wlr_addon_set_init(&timeline->addons);
 
 	return timeline;
 }
@@ -72,6 +75,7 @@ void wlr_drm_syncobj_timeline_unref(struct wlr_drm_syncobj_timeline *timeline) {
 		return;
 	}
 
+	wlr_addon_set_finish(&timeline->addons);
 	drmSyncobjDestroy(timeline->drm_fd, timeline->handle);
 	free(timeline);
 }
