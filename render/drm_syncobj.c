@@ -12,18 +12,29 @@
 #include <sys/eventfd.h>
 #endif
 
-struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_create(int drm_fd) {
+static struct wlr_drm_syncobj_timeline *timeline_create(int drm_fd, uint32_t handle) {
 	struct wlr_drm_syncobj_timeline *timeline = calloc(1, sizeof(*timeline));
 	if (timeline == NULL) {
 		return NULL;
 	}
+
 	timeline->drm_fd = drm_fd;
 	timeline->n_refs = 1;
+	timeline->handle = handle;
 
-	if (drmSyncobjCreate(drm_fd, 0, &timeline->handle) != 0) {
+	return timeline;
+}
+
+struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_create(int drm_fd) {
+	uint32_t handle = 0;
+	if (drmSyncobjCreate(drm_fd, 0, &handle) != 0) {
 		wlr_log_errno(WLR_ERROR, "drmSyncobjCreate failed");
-		free(timeline);
 		return NULL;
+	}
+
+	struct wlr_drm_syncobj_timeline *timeline = timeline_create(drm_fd, handle);
+	if (timeline == NULL) {
+		drmSyncobjDestroy(drm_fd, handle);
 	}
 
 	return timeline;
@@ -31,17 +42,15 @@ struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_create(int drm_fd) {
 
 struct wlr_drm_syncobj_timeline *wlr_drm_syncobj_timeline_import(int drm_fd,
 		int drm_syncobj_fd) {
-	struct wlr_drm_syncobj_timeline *timeline = calloc(1, sizeof(*timeline));
-	if (timeline == NULL) {
+	uint32_t handle = 0;
+	if (drmSyncobjFDToHandle(drm_fd, drm_syncobj_fd, &handle) != 0) {
+		wlr_log_errno(WLR_ERROR, "drmSyncobjFDToHandle failed");
 		return NULL;
 	}
-	timeline->drm_fd = drm_fd;
-	timeline->n_refs = 1;
 
-	if (drmSyncobjFDToHandle(drm_fd, drm_syncobj_fd, &timeline->handle) != 0) {
-		wlr_log_errno(WLR_ERROR, "drmSyncobjFDToHandle failed");
-		free(timeline);
-		return NULL;
+	struct wlr_drm_syncobj_timeline *timeline = timeline_create(drm_fd, handle);
+	if (timeline == NULL) {
+		drmSyncobjDestroy(drm_fd, handle);
 	}
 
 	return timeline;
