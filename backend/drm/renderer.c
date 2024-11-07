@@ -25,6 +25,7 @@ bool init_drm_renderer(struct wlr_drm_backend *drm,
 	if (renderer->allocator == NULL) {
 		wlr_log(WLR_ERROR, "Failed to create allocator");
 		wlr_renderer_destroy(renderer->wlr_rend);
+		renderer->wlr_rend = NULL;
 		return false;
 	}
 
