@@ -172,6 +172,39 @@ static void handle_parent_destroy(struct wl_listener *listener, void *data) {
 	backend_destroy(&drm->backend);
 }
 
+static bool init_mgpu_renderer(struct wlr_drm_backend *drm) {
+	if (!init_drm_renderer(drm, &drm->mgpu_renderer)) {
+		wlr_log(WLR_ERROR, "Failed to initialize renderer");
+		return false;
+	}
+
+	// We'll perform a multi-GPU copy for all submitted buffers, we need
+	// to be able to texture from them
+	struct wlr_renderer *renderer = drm->mgpu_renderer.wlr_rend;
+	const struct wlr_drm_format_set *texture_formats =
+		wlr_renderer_get_texture_formats(renderer, WLR_BUFFER_CAP_DMABUF);
+	if (texture_formats == NULL) {
+		wlr_log(WLR_ERROR, "Failed to query renderer texture formats");
+		return false;
+	}
+
+	// Forbid implicit modifiers, because their meaning changes from one
+	// GPU to another.
+	for (size_t i = 0; i < texture_formats->len; i++) {
+		const struct wlr_drm_format *fmt = &texture_formats->formats[i];
+		for (size_t j = 0; j < fmt->len; j++) {
+			uint64_t mod = fmt->modifiers[j];
+			if (mod == DRM_FORMAT_MOD_INVALID) {
+				continue;
+			}
+			wlr_drm_format_set_add(&drm->mgpu_formats, fmt->format, mod);
+		}
+	}
+	drm->backend.features.timeline = drm->backend.features.timeline &&
+		drm->mgpu_renderer.wlr_rend->features.timeline;
+	return true;
+}
+
 struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
 		struct wlr_device *dev, struct wlr_backend *parent) {
 	assert(session && dev);
@@ -241,39 +274,8 @@ struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
 		goto error_event;
 	}
 
-	if (drm->parent) {
-		if (!init_drm_renderer(drm, &drm->mgpu_renderer)) {
-			wlr_log(WLR_ERROR, "Failed to initialize renderer");
-			goto error_resources;
-		}
-
-		// We'll perform a multi-GPU copy for all submitted buffers, we need
-		// to be able to texture from them
-		struct wlr_renderer *renderer = drm->mgpu_renderer.wlr_rend;
-		const struct wlr_drm_format_set *texture_formats =
-			wlr_renderer_get_texture_formats(renderer, WLR_BUFFER_CAP_DMABUF);
-		if (texture_formats == NULL) {
-			wlr_log(WLR_ERROR, "Failed to query renderer texture formats");
-			goto error_mgpu_renderer;
-		}
-
-		// Forbid implicit modifiers, because their meaning changes from one
-		// GPU to another.
-		for (size_t i = 0; i < texture_formats->len; i++) {
-			const struct wlr_drm_format *fmt = &texture_formats->formats[i];
-			for (size_t j = 0; j < fmt->len; j++) {
-				uint64_t mod = fmt->modifiers[j];
-				if (mod == DRM_FORMAT_MOD_INVALID) {
-					continue;
-				}
-				wlr_drm_format_set_add(&drm->mgpu_formats, fmt->format, mod);
-			}
-		}
-	}
-
-	if (drm->mgpu_renderer.wlr_rend) {
-		drm->backend.features.timeline = drm->backend.features.timeline &&
-			drm->mgpu_renderer.wlr_rend->features.timeline;
+	if (drm->parent && !init_mgpu_renderer(drm)) {
+		goto error_mgpu_renderer;
 	}
 
 	drm->session_destroy.notify = handle_session_destroy;
@@ -283,7 +285,6 @@ struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
 
 error_mgpu_renderer:
 	finish_drm_renderer(&drm->mgpu_renderer);
-error_resources:
 	finish_drm_resources(drm);
 error_event:
 	wl_list_remove(&drm->session_active.link);
