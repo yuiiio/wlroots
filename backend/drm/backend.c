@@ -271,7 +271,6 @@ struct wlr_backend *wlr_drm_backend_create(struct wlr_session *session,
 		}
 	}
 
-	drm->backend.features.timeline = drm->iface != &legacy_iface;
 	if (drm->parent) {
 		drm->backend.features.timeline = drm->backend.features.timeline &&
 			drm->mgpu_renderer.wlr_rend->features.timeline;
