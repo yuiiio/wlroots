@@ -13,6 +13,7 @@
 #include <xf86drm.h>
 #include "backend/drm/drm.h"
 #include "backend/drm/fb.h"
+#include "render/drm_format_set.h"
 
 struct wlr_drm_backend *get_drm_backend_from_backend(
 		struct wlr_backend *wlr_backend) {
@@ -172,10 +173,25 @@ static void handle_parent_destroy(struct wl_listener *listener, void *data) {
 	backend_destroy(&drm->backend);
 }
 
+static void sanitize_mgpu_modifiers(struct wlr_drm_format_set *set) {
+	for (size_t idx = 0; idx < set->len; idx++) {
+		// Implicit modifiers are not well-defined across devices, so strip
+		// them from all formats in multi-gpu scenarios.
+		struct wlr_drm_format *fmt = &set->formats[idx];
+		wlr_drm_format_set_remove(set, fmt->format, DRM_FORMAT_MOD_INVALID);
+	}
+}
+
 static bool init_mgpu_renderer(struct wlr_drm_backend *drm) {
 	if (!init_drm_renderer(drm, &drm->mgpu_renderer)) {
-		wlr_log(WLR_ERROR, "Failed to initialize renderer");
-		return false;
+		wlr_log(WLR_INFO, "Failed to initialize mgpu blit renderer"
+			", falling back to scanning out from primary GPU");
+
+		for (uint32_t plane_idx = 0; plane_idx < drm->num_planes; plane_idx++) {
+			struct wlr_drm_plane *plane = &drm->planes[plane_idx];
+			sanitize_mgpu_modifiers(&plane->formats);
+		}
+		return true;
 	}
 
 	// We'll perform a multi-GPU copy for all submitted buffers, we need
@@ -188,18 +204,8 @@ static bool init_mgpu_renderer(struct wlr_drm_backend *drm) {
 		return false;
 	}
 
-	// Forbid implicit modifiers, because their meaning changes from one
-	// GPU to another.
-	for (size_t i = 0; i < texture_formats->len; i++) {
-		const struct wlr_drm_format *fmt = &texture_formats->formats[i];
-		for (size_t j = 0; j < fmt->len; j++) {
-			uint64_t mod = fmt->modifiers[j];
-			if (mod == DRM_FORMAT_MOD_INVALID) {
-				continue;
-			}
-			wlr_drm_format_set_add(&drm->mgpu_formats, fmt->format, mod);
-		}
-	}
+	wlr_drm_format_set_copy(&drm->mgpu_formats, texture_formats);
+	sanitize_mgpu_modifiers(&drm->mgpu_formats);
 	drm->backend.features.timeline = drm->backend.features.timeline &&
 		drm->mgpu_renderer.wlr_rend->features.timeline;
 	return true;
