@@ -84,7 +84,7 @@ internal_features = {
 internal_config = configuration_data()
 
 wayland_kwargs = {
-	'version': '>=1.23',
+	'version': '>=1.23.1',
 	'fallback': 'wayland',
 	'default_options': [
 		'tests=false',
