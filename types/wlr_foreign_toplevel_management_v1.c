@@ -340,7 +340,7 @@ void wlr_foreign_toplevel_handle_v1_output_leave(
 }
 
 static void fill_array_from_toplevel_state(struct wl_array *states,
-		uint32_t data[], uint32_t state) {
+		uint32_t data[], uint32_t state, uint32_t version) {
 	size_t nstates = 0;
 	if (state & WLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED) {
 		data[nstates++] = ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED;
@@ -351,7 +351,8 @@ static void fill_array_from_toplevel_state(struct wl_array *states,
 	if (state & WLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED) {
 		data[nstates++] = ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED;
 	}
-	if (state & WLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN) {
+	if (version >= ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN_SINCE_VERSION
+			&& (state & WLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN)) {
 		data[nstates++] = ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN;
 	}
 	assert(nstates <= FOREIGN_TOPLEVEL_HANDLE_V1_STATE_COUNT);
@@ -368,7 +369,8 @@ static void toplevel_send_state(struct wlr_foreign_toplevel_handle_v1 *toplevel)
 
 	struct wl_resource *resource;
 	wl_resource_for_each(resource, &toplevel->resources) {
-		fill_array_from_toplevel_state(&state_array, states, toplevel->state);
+		fill_array_from_toplevel_state(&state_array, states,
+			toplevel->state, wl_resource_get_version(resource));
 		zwlr_foreign_toplevel_handle_v1_send_state(resource, &state_array);
 	}
 	toplevel_update_idle_source(toplevel);
@@ -581,7 +583,8 @@ static void toplevel_send_details_to_toplevel_resource(
 
 	struct wl_array state_array;
 	uint32_t states[FOREIGN_TOPLEVEL_HANDLE_V1_STATE_COUNT];
-	fill_array_from_toplevel_state(&state_array, states, toplevel->state);
+	fill_array_from_toplevel_state(&state_array, states,
+		toplevel->state, wl_resource_get_version(resource));
 	zwlr_foreign_toplevel_handle_v1_send_state(resource, &state_array);
 
 	toplevel_resource_send_parent(resource, toplevel->parent);
