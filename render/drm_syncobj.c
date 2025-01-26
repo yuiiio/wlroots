@@ -193,12 +193,15 @@ static int handle_eventfd_ready(int ev_fd, uint32_t mask, void *data) {
 	}
 
 	wl_signal_emit_mutable(&waiter->events.ready, NULL);
+	waiter->callback(waiter);
 	return 0;
 }
 
 bool wlr_drm_syncobj_timeline_waiter_init(struct wlr_drm_syncobj_timeline_waiter *waiter,
 		struct wlr_drm_syncobj_timeline *timeline, uint64_t point, uint32_t flags,
-		struct wl_event_loop *loop) {
+		struct wl_event_loop *loop, wlr_drm_syncobj_timeline_ready_callback callback) {
+	assert(callback);
+
 	int ev_fd;
 #if HAVE_EVENTFD
 	ev_fd = eventfd(0, EFD_CLOEXEC);
@@ -235,6 +238,7 @@ bool wlr_drm_syncobj_timeline_waiter_init(struct wlr_drm_syncobj_timeline_waiter
 	*waiter = (struct wlr_drm_syncobj_timeline_waiter){
 		.ev_fd = ev_fd,
 		.event_source = source,
+		.callback = callback,
 	};
 	wl_signal_init(&waiter->events.ready);
 	return true;
