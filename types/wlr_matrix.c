@@ -1,4 +1,3 @@
-#include <math.h>
 #include <string.h>
 #include <wayland-server-protocol.h>
 #include <wlr/types/wlr_output.h>
@@ -49,15 +48,6 @@ void wlr_matrix_scale(float mat[static 9], float x, float y) {
 		0.0f, 0.0f, 1.0f,
 	};
 	wlr_matrix_multiply(mat, mat, scale);
-}
-
-void wlr_matrix_rotate(float mat[static 9], float rad) {
-	float rotate[9] = {
-		cos(rad), -sin(rad), 0.0f,
-		sin(rad),  cos(rad), 0.0f,
-		0.0f,      0.0f,     1.0f,
-	};
-	wlr_matrix_multiply(mat, mat, rotate);
 }
 
 static const float transforms[][9] = {
@@ -131,8 +121,7 @@ void matrix_projection(float mat[static 9], int width, int height,
 }
 
 void wlr_matrix_project_box(float mat[static 9], const struct wlr_box *box,
-		enum wl_output_transform transform, float rotation,
-		const float projection[static 9]) {
+		enum wl_output_transform transform, const float projection[static 9]) {
 	int x = box->x;
 	int y = box->y;
 	int width = box->width;
@@ -140,12 +129,6 @@ void wlr_matrix_project_box(float mat[static 9], const struct wlr_box *box,
 
 	wlr_matrix_identity(mat);
 	wlr_matrix_translate(mat, x, y);
-
-	if (rotation != 0) {
-		wlr_matrix_translate(mat, width/2, height/2);
-		wlr_matrix_rotate(mat, rotation);
-		wlr_matrix_translate(mat, -width/2, -height/2);
-	}
 
 	wlr_matrix_scale(mat, width, height);
 

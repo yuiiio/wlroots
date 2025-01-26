@@ -18,9 +18,6 @@ void wlr_matrix_translate(float mat[static 9], float x, float y);
 /** Writes a 2D scale matrix to mat of magnitude (x, y) */
 void wlr_matrix_scale(float mat[static 9], float x, float y);
 
-/** Writes a 2D rotation matrix to mat at an angle of rad radians */
-void wlr_matrix_rotate(float mat[static 9], float rad);
-
 /** Writes a transformation matrix which applies the specified
  *  wl_output_transform to mat */
 void wlr_matrix_transform(float mat[static 9],
@@ -31,8 +28,7 @@ void wlr_matrix_transform(float mat[static 9],
  *  rotation. The result is written to mat, which can be applied to each
  *  coordinate of the box to get a new coordinate from [-1,1]. */
 void wlr_matrix_project_box(float mat[static 9], const struct wlr_box *box,
-	enum wl_output_transform transform, float rotation,
-	const float projection[static 9]);
+	enum wl_output_transform transform, const float projection[static 9]);
 
 /**
  * Writes a 2D orthographic projection matrix to mat of (width, height) with a
