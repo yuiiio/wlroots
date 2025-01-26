@@ -12,8 +12,6 @@ void wlr_matrix_identity(float mat[static 9]);
 void wlr_matrix_multiply(float mat[static 9], const float a[static 9],
 	const float b[static 9]);
 
-void wlr_matrix_transpose(float mat[static 9], const float a[static 9]);
-
 /** Writes a 2D translation matrix to mat of magnitude (x, y) */
 void wlr_matrix_translate(float mat[static 9], float x, float y);
 
