@@ -192,7 +192,6 @@ static int handle_eventfd_ready(int ev_fd, uint32_t mask, void *data) {
 		}
 	}
 
-	wl_signal_emit_mutable(&waiter->events.ready, NULL);
 	waiter->callback(waiter);
 	return 0;
 }
@@ -240,13 +239,10 @@ bool wlr_drm_syncobj_timeline_waiter_init(struct wlr_drm_syncobj_timeline_waiter
 		.event_source = source,
 		.callback = callback,
 	};
-	wl_signal_init(&waiter->events.ready);
 	return true;
 }
 
 void wlr_drm_syncobj_timeline_waiter_finish(struct wlr_drm_syncobj_timeline_waiter *waiter) {
-	assert(wl_list_empty(&waiter->events.ready.listener_list));
-
 	wl_event_source_remove(waiter->event_source);
 	close(waiter->ev_fd);
 }

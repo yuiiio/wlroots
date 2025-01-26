@@ -44,10 +44,6 @@ typedef void (*wlr_drm_syncobj_timeline_ready_callback)(
 
 struct wlr_drm_syncobj_timeline_waiter {
 	struct {
-		struct wl_signal ready;
-	} events;
-
-	struct {
 		int ev_fd;
 		struct wl_event_source *event_source;
 		wlr_drm_syncobj_timeline_ready_callback callback;
