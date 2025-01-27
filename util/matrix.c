@@ -2,7 +2,7 @@
 #include <wayland-server-protocol.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/util/box.h>
-#include "types/wlr_matrix.h"
+#include "util/matrix.h"
 
 void wlr_matrix_identity(float mat[static 9]) {
 	static const float identity[9] = {
