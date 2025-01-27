@@ -1,6 +1,5 @@
 #include <string.h>
 #include <wayland-server-protocol.h>
-#include <wlr/types/wlr_output.h>
 #include <wlr/util/box.h>
 #include "util/matrix.h"
 
