@@ -310,11 +310,11 @@ static uint32_t region_area(pixman_region32_t *region) {
 	return area;
 }
 
-static void scale_output_damage(pixman_region32_t *damage, float scale, bool round_up) {
-	wlr_region_scale(damage, damage, scale);
+static void scale_region(pixman_region32_t *region, float scale, bool round_up) {
+	wlr_region_scale(region, region, scale);
 
 	if (round_up && floor(scale) != scale) {
-		wlr_region_expand(damage, damage, 1);
+		wlr_region_expand(region, region, 1);
 	}
 }
 
@@ -330,11 +330,11 @@ struct render_data {
 	pixman_region32_t damage;
 };
 
-static void logical_to_buffer_coords(pixman_region32_t *damage, const struct render_data *data,
+static void logical_to_buffer_coords(pixman_region32_t *region, const struct render_data *data,
 		bool round_up) {
 	enum wl_output_transform transform = wlr_output_transform_invert(data->transform);
-	scale_output_damage(damage, data->scale, round_up);
-	wlr_region_transform(damage, damage, transform, data->trans_width, data->trans_height);
+	scale_region(region, data->scale, round_up);
+	wlr_region_transform(region, region, transform, data->trans_width, data->trans_height);
 }
 
 static void output_to_buffer_coords(pixman_region32_t *damage, struct wlr_output *output) {
@@ -402,7 +402,7 @@ static void scene_damage_outputs(struct wlr_scene *scene, pixman_region32_t *dam
 		pixman_region32_copy(&output_damage, damage);
 		pixman_region32_translate(&output_damage,
 			-scene_output->x, -scene_output->y);
-		scale_output_damage(&output_damage, scene_output->output->scale, true);
+		scale_region(&output_damage, scene_output->output->scale, true);
 		output_to_buffer_coords(&output_damage, scene_output->output);
 		scene_output_damage(scene_output, &output_damage);
 		pixman_region32_fini(&output_damage);
@@ -959,7 +959,7 @@ void wlr_scene_buffer_set_buffer_with_options(struct wlr_scene_buffer *scene_buf
 		pixman_region32_t cull_region;
 		pixman_region32_init(&cull_region);
 		pixman_region32_copy(&cull_region, &scene_buffer->node.visible);
-		scale_output_damage(&cull_region, output_scale, true);
+		scale_region(&cull_region, output_scale, true);
 		pixman_region32_translate(&cull_region, -lx * output_scale, -ly * output_scale);
 		pixman_region32_intersect(&output_damage, &output_damage, &cull_region);
 		pixman_region32_fini(&cull_region);
