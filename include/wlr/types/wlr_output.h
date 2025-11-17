@@ -51,6 +51,9 @@ struct wlr_output_cursor {
 	uint64_t wait_point;
 	struct wl_list link;
 
+	bool deferred;
+	double deferred_x, deferred_y;
+
 	struct {
 		struct wl_listener renderer_destroy;
 		struct wlr_color_transform *color_transform;
@@ -460,6 +463,7 @@ bool wlr_output_cursor_set_buffer(struct wlr_output_cursor *cursor,
 	struct wlr_buffer *buffer, int32_t hotspot_x, int32_t hotspot_y);
 bool wlr_output_cursor_move(struct wlr_output_cursor *cursor,
 	double x, double y);
+void wlr_output_cursor_move_all_deferred(struct wlr_output *output);
 void wlr_output_cursor_destroy(struct wlr_output_cursor *cursor);
 
 /**
