@@ -17,4 +17,6 @@ bool scene_nodes_in_box(struct wlr_scene_node *node, struct wlr_box *box,
 
 void scene_surface_set_clip(struct wlr_scene_surface *surface, struct wlr_box *clip);
 
+void scene_surface_set_fifo(struct wlr_scene_surface *surface, struct wlr_fifo_v1 *fifo);
+
 #endif
