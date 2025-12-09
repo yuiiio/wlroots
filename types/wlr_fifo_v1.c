@@ -91,7 +91,7 @@ static void fifo_handle_output_destroy(struct wl_listener *listener, void *data)
 // a heuristically defined value (40hz) so that we can advance the queue.
 static int handle_timer(void *data) {
 	struct wlr_fifo_v1 *fifo = data;
-	int64_t refresh_nsec = 25000000;
+	int64_t refresh_nsec = 100000000;
 	int64_t now_nsec = get_current_time_msec()*1000000;
 	if (fifo->state.barrier_set && (now_nsec - (int64_t)fifo->state.last_output_present_nsec > refresh_nsec)) {
 		fifo_signal_barrier(fifo);
@@ -361,7 +361,7 @@ bool wlr_fifo_v1_set_output(struct wlr_fifo_v1 *fifo, struct wlr_output *output)
 		if (!fifo->surface_occluded_source) {
 			return false;
 		}
-		int refresh_msec = 25;
+		int refresh_msec = 100;
 		wl_event_source_timer_update(fifo->surface_occluded_source, refresh_msec);
 
 		fifo->output = output;
